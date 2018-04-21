@@ -1,3 +1,10 @@
+/*
+* COP3402 - Spring 2018
+* System Software Assignment 3
+* parser.c
+* Submitted by: Gaelen Dignan and Ben Faria
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,7 +23,7 @@ typedef struct lex
     char *name;
     int value;
     int token;
-}lex;
+} lex;
 
 typedef struct instruction
 {
@@ -25,7 +32,7 @@ typedef struct instruction
     int l;  // L
     int m;  // M
     char *type; // Name of instruction
-}instruction;
+} instruction;
 
 typedef struct counters
 {
@@ -34,7 +41,7 @@ typedef struct counters
     int bp;
     int sp;
     int pc;
-}counters;
+} counters;
 
 typedef struct 
 { 
@@ -53,7 +60,7 @@ char **lexNames = {nulsym, identsym, numbersym, plussym, minussym,multsym,
                    slashsym, oddsym, eqsym, neqsym, lessym, leqsym,gtrsym, 
                    geqsym, lparentsym, rparentsym, commasym, semicolonsym,
                    periodsym, becomessym, beginsym, endsym, ifsym, thensym, 
-                   whilesym, dosym, callsym, constsym, varsym, procsym, writesym,readsym , elsesym};
+                   whilesym, dosym, callsym, constsym, varsym, procsym, writesym, readsym , elsesym};
 
 int base(int l, int base, int *stack)
 {
