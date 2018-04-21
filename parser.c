@@ -1,10 +1,3 @@
-/*
-* COP3402 - Spring 2018
-* System Software Assignment 3
-* parser.c
-* Submitted by: Gaelen Dignan and Ben Faria
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,7 +16,7 @@ typedef struct lex
     char *name;
     int value;
     int token;
-} lex;
+}lex;
 
 typedef struct instruction
 {
@@ -32,7 +25,7 @@ typedef struct instruction
     int l;  // L
     int m;  // M
     char *type; // Name of instruction
-} instruction;
+}instruction;
 
 typedef struct counters
 {
@@ -41,7 +34,7 @@ typedef struct counters
     int bp;
     int sp;
     int pc;
-} counters;
+}counters;
 
 typedef struct 
 { 
@@ -52,15 +45,23 @@ typedef struct
     int addr; // M address
 } symbol; 
 
+typdef enum {nulsym = 1, identsym = 2, numbersym = 3, plussym = 4, minussym = 5, multsym = 6,  
+             slashsym = 7, oddsym = 8, eqsym = 9, neqsym = 10, lessym = 12, leqsym = 13,gtrsym = 14, 
+             geqsym = 15, lparentsym = 16, rparentsym = 17, commasym = 18, semicolonsym = 19,
+             periodsym = 20, becomessym = 21, beginsym = 22, endsym = 23, ifsym = 24, thensym = 26, 
+             whilesym = 27, dosym = 28, callsym = 29, constsym = 30, varsym = 31, procsym = 33, 
+             writesym = 34, readsym = 35, elsesym = 36} token_type;
+
 instruction *code;
 lex *lexTable;
 symbol *symbolTable;
 int tokenCounter;
-char **lexNames = {nulsym, identsym, numbersym, plussym, minussym,multsym,  
-                   slashsym, oddsym, eqsym, neqsym, lessym, leqsym,gtrsym, 
-                   geqsym, lparentsym, rparentsym, commasym, semicolonsym,
-                   periodsym, becomessym, beginsym, endsym, ifsym, thensym, 
-                   whilesym, dosym, callsym, constsym, varsym, procsym, writesym, readsym , elsesym};
+int token;
+char **lexNames = {"nulsym", "identsym", "numbersym", "plussym", "minussym", "multsym",  
+                   "slashsym", "oddsym", "eqsym", "neqsym", "lessym", "leqsym", "gtrsym", 
+                   "geqsym", "lparentsym", "rparentsym", "commasym", "semicolonsym",
+                   "periodsym", "becomessym", "beginsym", "endsym", "ifsym", "thensym", 
+                   "whilesym", "dosym", "callsym", "constsym", "varsym", "procsym", "writesym", "readsym", "elsesym"};
 
 int base(int l, int base, int *stack)
 {
@@ -657,12 +658,42 @@ void statement()
 
 void block()
 {
+    // if (token == constsym)
+    // {
+    //     do 
+    //     {
+    //         token = getToken();
+    //         if (token != identsym)
+    //             // error
+    //         token = getToken();
+    //         if (token != eqsym)
+    //             //error
+    //         token = getToken();
+    //         if (token != numbersym)
+    //             // error
+    //         token = getToken();
+    //     } while (token == commasym);
+    //     if (token != semicolonsym)
+    //         //error
+    //     token = getToken();
+    // }
+    // if (token == varsym)
+    // {
 
+    // }
+    // while (token == procsym)
+    // {
+
+    // }
 }
 
 void program()
 {
+    token = getToken();
+    block();
 
+    if (token != periodsym)
+        printf("Error 9: Period expected\n");
 }
 
 int main(int argc, char **argv)
