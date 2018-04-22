@@ -1,3 +1,10 @@
+/*
+* COP3402 - Spring 2018
+* System Software Assignment 3
+* parser.c
+* Submitted by: Gaelen Dignan and Ben Faria
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,7 +52,7 @@ typedef struct
     int addr; // M address
 } symbol; 
 
-typdef enum {nulsym = 1, identsym = 2, numbersym = 3, plussym = 4, minussym = 5, multsym = 6,  
+enum tokens {nulsym = 1, identsym = 2, numbersym = 3, plussym = 4, minussym = 5, multsym = 6,  
              slashsym = 7, oddsym = 8, eqsym = 9, neqsym = 10, lessym = 12, leqsym = 13,gtrsym = 14, 
              geqsym = 15, lparentsym = 16, rparentsym = 17, commasym = 18, semicolonsym = 19,
              periodsym = 20, becomessym = 21, beginsym = 22, endsym = 23, ifsym = 24, thensym = 26, 
@@ -99,10 +106,10 @@ void printStack(int sp, int bp, int* stack, int lex){
 void execute(int *stack, int *registers, counters *counter)
 {
     instruction inst;
-    bool sioEnd = false;
+    int sioEnd = 0;
 
     printf("\n OP   Rg Lx Vl[ PC BP SP]\n");
-    while (!sioEnd)
+    while (sioEnd == 0)
     {
         inst = code[counter->pc];
         switch(inst.op)
@@ -181,7 +188,7 @@ void execute(int *stack, int *registers, counters *counter)
                 else if (inst.m == 2)
                     scanf("%d", &registers[inst.r]);
                 else if (inst.m == 3)
-                    sioEnd = true;
+                    sioEnd = 1;
                 break;
 
             // neg
@@ -324,6 +331,7 @@ void vm()
     counter = calloc(1, sizeof(counters));
     counter->bp = 1;
 
+    // Need to remove file pointer
     fetch(argv[1], counter);
     execute(stack, registers, counter);
 }
@@ -404,13 +412,14 @@ void printLexTable(lex *lexTable, int lexTableIndex)
 }
 
 // subject to change
-void lex()
+void lexical()
 {
     FILE *fp;
     char c;
     char *lexName;
     int lookedAhead, inComment, lexVal, tempIndex, lexTableIndex = 0;
 
+    // Need to fix file pointer
     readAndPrintFile(argv[1]);
 
     fp = fopen(argv[1], "r");
@@ -698,8 +707,8 @@ void program()
 
 int main(int argc, char **argv)
 {
-    code = calloc(MAX_CODE_LENGTH, sizeof(instruction);
-    lexTable = calloc(MAX_LEX_NUMBER, sizeof(lex);
+    code = calloc(MAX_CODE_LENGTH, sizeof(instruction));
+    lexTable = calloc(MAX_LEX_NUMBER, sizeof(lex));
     symbolTable = calloc(MAX_SYMBOL_SIZE, sizeof(symbol));
     tokenCounter = 0;
 }
