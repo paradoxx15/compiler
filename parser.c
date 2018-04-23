@@ -62,8 +62,10 @@ enum tokens {nulsym = 1, identsym = 2, numbersym = 3, plussym = 4, minussym = 5,
 instruction *code;
 lex *lexTable;
 symbol *symbolTable;
+int iCount;
 int tokenCounter;
 int token;
+int number;
 char **lexNames = {"nulsym", "identsym", "numbersym", "plussym", "minussym", "multsym",  
                    "slashsym", "oddsym", "eqsym", "neqsym", "lessym", "leqsym", "gtrsym", 
                    "geqsym", "lparentsym", "rparentsym", "commasym", "semicolonsym",
@@ -637,22 +639,138 @@ void lexical()
 
 int getToken()
 {
+    if (lexTable[tokenCounter].token == 2)
+        number = lexTable[tokenCounter].value;
+        
     return lexTable[tokenCounter++].token;
+}
+void addInstruction(int op, int r, int l, int m)
+{
+        code[iCount].op = op;
+        code[iCount].r = r;
+        code[iCount].l = l;
+        code[iCount].m = m;
+        iCount++;
 }
 
 void factor()
 {
+    int i, level, adr, val, kind;
 
+    while (token == identsym || token == numbersym || token == lparentsym)
+    {
+        if (token == identsym) 
+        {
+            i = position(); // Not sure what we need here
+            if (i == 0) 
+            {
+                printf("Error 11: Undeclared Identifier\n");;
+            }
+            else 
+            {
+                kind = symbolTable[i].kind;
+                level = symbolTable[i].level;
+                adr = symbolTable[i].addr;
+                val = symbolTable[i].val;
+
+                if (kind == 1) 
+                {
+                    addInstruction();
+                }
+                else if (kind == 2) 
+                {
+                    addInstruction();
+                }
+                else 
+                {
+                    printf("Error 21: Expression must not contain a procedure identifier\n");
+                }
+            }
+            token = getToken();
+        }
+        else if (token == numbersym) 
+        {
+            if (number > 99999) 
+            {
+                printf("Error 25: This number is too large\n");
+                number = 0;
+            }
+            addInstruction();
+
+            token = getToken();
+        }
+        else if (token == lparentsym) 
+        {
+            token = getToken();
+            expression();
+
+            if (token == rparentsym) 
+            {
+                token = getToken();
+            }
+            else 
+            {
+                printf("Error 22: Right parenthesis missing\n");
+            }
+        }
+    }
 }
 
 void term()
 {
+    int lastToken;
+    factor();
+    while(token == multsym || token == slashsym) 
+    {
+        lastToken = token;
+        token = getToken();
+        factor();
 
+        if(lastToken == multsym) 
+        {
+            addInstruction();
+        }
+        else 
+        {
+            addInstruction();
+        }
+    }
 }
 
 void expression()
 {
+    int lastToken;
+    if (token == plussym || token == minussym)
+    {
+        lastToken = token;
+        token = getToken();
+        term();
 
+        if (lastToken == minussym)
+        {
+            addInstruction();
+        }
+    }
+    else
+    {
+        term();
+    }
+
+    while (token == plussym || token == minussym)
+    {
+        lastToken = token;
+        token = getToken();
+        term();
+
+        if (lastToken == plussym)
+        {
+            addInstruction();
+        }
+        else
+        {
+            addInstruction();
+        }
+    }
 }
 
 void condition()
@@ -715,4 +833,5 @@ int main(int argc, char **argv)
     lexTable = calloc(MAX_LEX_NUMBER, sizeof(lex));
     symbolTable = calloc(MAX_SYMBOL_SIZE, sizeof(symbol));
     tokenCounter = 0;
+    iCount = 0;
 }
