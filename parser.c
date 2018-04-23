@@ -667,33 +667,37 @@ void statement()
 
 void block()
 {
-    // if (token == constsym)
-    // {
-    //     do 
-    //     {
-    //         token = getToken();
-    //         if (token != identsym)
-    //             // error
-    //         token = getToken();
-    //         if (token != eqsym)
-    //             //error
-    //         token = getToken();
-    //         if (token != numbersym)
-    //             // error
-    //         token = getToken();
-    //     } while (token == commasym);
-    //     if (token != semicolonsym)
-    //         //error
-    //     token = getToken();
-    // }
-    // if (token == varsym)
-    // {
+    do 
+    {
+         if (token == constsym)
+        {
+            do 
+            {
+                token = getToken();
+                if (token != identsym)
+                    // error
+                token = getToken();
+                if (token != eqsym)
+                    //error
+                token = getToken();
+                if (token != numbersym)
+                    // error
+                token = getToken();
+            } while (token == commasym);
+            
+            if (token != semicolonsym)
+                //error
+            token = getToken();
+        }
+        if (token == varsym)
+        {
 
-    // }
-    // while (token == procsym)
-    // {
+        }
+        while (token == procsym)
+        {
 
-    // }
+        }
+    } while (token == constsym || token == varsym || token == procsym)
 }
 
 void program()
