@@ -31,7 +31,6 @@ typedef struct instruction
     int r; // Register
     int l;  // L
     int m;  // M
-    char *type; // Name of instruction
 }instruction;
 
 typedef struct counters
@@ -67,12 +66,16 @@ int sCount;
 int tokenCounter;
 int token;
 int number;
+int vmPrint;
 char **tokName;
-char **lexNames = {"nulsym", "identsym", "numbersym", "plussym", "minussym", "multsym",  
+char *lexNames[] = {"nulsym", "identsym", "numbersym", "plussym", "minussym", "multsym",  
                    "slashsym", "oddsym", "eqsym", "neqsym", "lessym", "leqsym", "gtrsym", 
                    "geqsym", "lparentsym", "rparentsym", "commasym", "semicolonsym",
                    "periodsym", "becomessym", "beginsym", "endsym", "ifsym", "thensym", 
                    "whilesym", "dosym", "callsym", "constsym", "varsym", "procsym", "writesym", "readsym", "elsesym"};
+char *opTypes[] = {"", "lit", "rtn", "lod", "sto", "cal", "inc", "jmp", "jpc", "sio", "neg"
+                  "add", "sub", "mul", "div", "odd", "mod", "eql", "neq", "lss", "leq"
+                  "gtr", "geq"}
 
 int base(int l, int base, int *stack)
 {
@@ -112,7 +115,17 @@ void execute(int *stack, int *registers, counters *counter)
     instruction inst;
     int sioEnd = 0;
 
-    printf("\n OP   Rg Lx Vl[ PC BP SP]\n");
+    if (vmPrint)
+    {
+        printf("\n-------------------------------------------\n");
+        printf("VIRTUAL MACHINE TRACE:\n");
+        printf("Initial Values:\n")
+        printf("PC\tBP\tSP\tStack\n");
+        printf("0 1 0 0\n\n");
+        printf("Stack Trace:\n");
+        printf("\t\tR L M PC\tBP\tSP\tStack\n");
+    }
+
     while (sioEnd == 0)
     {
         inst = code[counter->pc];
@@ -120,14 +133,12 @@ void execute(int *stack, int *registers, counters *counter)
         {
             // lit
             case 1:
-                inst.type = "LIT";
                 registers[inst.r] = inst.m;
                 counter->pc++;
                 break;
 
             // rtn
             case 2:
-                inst.type = "RTN";
                 counter->sp = counter->bp - 1;
                 counter->bp = stack[counter->sp + 3];
                 counter->pc = stack[counter->sp + 4];
@@ -136,21 +147,18 @@ void execute(int *stack, int *registers, counters *counter)
 
             // lod
             case 3:
-                inst.type = "LOD";
                 registers[inst.r] = stack[base(inst.l, counter->bp, stack) + inst.m];
                 counter->pc++;
                 break;
 
             // sto
             case 4:
-                inst.type = "STO";
                 stack[base(inst.l, counter->bp, stack) + inst.m] = registers[inst.r];
                 counter->pc++;
                 break;
 
             // cal
             case 5:
-                inst.type = "CAL";
                 stack[counter->sp + 1] = 0;
                 stack[counter->sp + 2] = base(inst.l, counter->bp, stack);
                 stack[counter->sp + 3] = counter->bp;
@@ -163,20 +171,17 @@ void execute(int *stack, int *registers, counters *counter)
 
             // inc
             case 6:
-                inst.type = "INC";
                 counter->sp += inst.m;
                 counter->pc++;
                 break;
 
             // jmp
             case 7:
-                inst.type = "JMP";
                 counter->pc = inst.m;
                 break;
 
             // jpc
             case 8:
-                inst.type = "JPC";
                 if (registers[inst.r] == 0)
                     counter->pc = inst.m;
                 else
@@ -185,10 +190,9 @@ void execute(int *stack, int *registers, counters *counter)
 
             // sio
             case 9:
-                inst.type = "SIO";
                 counter->pc++;
                 if (inst.m == 1)
-                    printf("%d\n", registers[inst.r]);
+                    printf("OUTPUT: %d\n", registers[inst.r]);
                 else if (inst.m == 2)
                     scanf("%d", &registers[inst.r]);
                 else if (inst.m == 3)
@@ -197,130 +201,91 @@ void execute(int *stack, int *registers, counters *counter)
 
             // neg
             case 10:
-                inst.type = "NEG";
                 registers[inst.r] = -registers[inst.l];
                 counter->pc++;
                 break;
 
             // add
             case 11:
-                inst.type = "ADD";
                 registers[inst.r] = registers[inst.l] + registers[inst.m];
                 counter->pc++;
                 break;
 
             // sub
             case 12:
-                inst.type = "SUB";
                 registers[inst.r] = registers[inst.l] - registers[inst.m];
                 counter->pc++;
                 break;
 
             // mul
             case 13:
-                inst.type = "MUL";
                 registers[inst.r] = registers[inst.l] * registers[inst.m];
                 counter->pc++;
                 break;
 
             // div
             case 14:
-                inst.type = "DIV";
                 registers[inst.r] = registers[inst.l] / registers[inst.m];
                 counter->pc++;
                 break;
 
             // odd
             case 15:
-                inst.type = "ODD";
                 registers[inst.r] = registers[inst.r] % 2;
                 counter->pc++;
                 break;
 
             // mod
             case 16:
-                inst.type = "MOD";
                 registers[inst.r] = registers[inst.l] % registers[inst.m];
                 counter->pc++;
                 break;
 
             // eql
             case 17:
-                inst.type = "EQL";
                 registers[inst.r] = registers[inst.l] == registers[inst.m];
                 break;
 
             // neq
             case 18:
-                inst.type = "NEQ";
                 registers[inst.r] = registers[inst.l] != registers[inst.m];
                 counter->pc++;
                 break;
 
             // lss
             case 19:
-                inst.type = "LSS";
                 registers[inst.r] = registers[inst.l] < registers[inst.m];
                 counter->pc++;
                 break;
 
             // leq
             case 20:
-                inst.type = "LEQ";
                 registers[inst.r] = registers[inst.l] <= registers[inst.m];
                 counter->pc++;
                 break;
 
             // gtr
             case 21:
-                inst.type = "GTR";
                 registers[inst.r] = registers[inst.l] > registers[inst.m];
                 counter->pc++;
                 break;
 
             // geq
             case 22:
-                inst.type = "GEQ";
                 registers[inst.r] = registers[inst.l] >= registers[inst.m];
                 counter->pc++;
                 break;   
         }
-        printf("%-4s%3d%3d%3d[%3d%3d%3d] ", inst.type, inst.r, inst.l, inst.m, counter->pc, counter->bp, counter->sp);
-        printStack(counter->sp, counter->bp, stack, counter->lex);
-        printf("\n\tRegisters:[%3d%3d%3d%3d%3d%3d%3d%3d]\n",
+
+        if (vmPrint)
+        {
+            printf("%d%-4s%3d%3d%3d%3d%3d%3d ", i, opTypes[inst.op], inst.r, inst.l, inst.m, counter->pc, counter->bp, counter->sp);
+            printStack(counter->sp, counter->bp, stack, counter->lex);
+            printf("\nRF:%3d%3d%3d%3d%3d%3d%3d%3d\n",
                 registers[0], registers[1], registers[2], registers[3], registers[4], registers[5], registers[6], registers[7]);
+        }
     }
 }
-
-void fetch(char *filename, counters *counter)
-{
-    FILE *fp;
-    char *line = NULL;
-	size_t len = 0;
-	ssize_t read;
-    int i;
-    char *c;
-    instruction inst;
- 
-	fp = fopen(filename, "r");
-	if (fp == NULL)
-		return;
-
-	while ((read = getline(&line, &len, fp)) != -1) {
-        c = strtok(line, " ");
-        inst.op = atoi(c);
-        c = strtok(NULL, " ");
-        inst.r = atoi(c);
-        c = strtok(NULL, " ");
-        inst.l = atoi(c);
-        c = strtok(NULL, " ");
-        inst.m = atoi(c);
-
-        code[counter->instCount++] = inst;
-	}
-    fclose(fp);
-}
-
 
 // subject to change
 void vm()
@@ -336,7 +301,6 @@ void vm()
     counter->bp = 1;
 
     // Need to remove file pointer
-    fetch(argv[1], counter);
     execute(stack, registers, counter);
 }
 
@@ -391,17 +355,12 @@ int checkReserved(char *word)
             return 2;
 }
 
-void printLexTable(lex *lexTable, int lexTableIndex)
+void printLex(lex *lexTable, int lexTableIndex)
 {
     int i;
-
-    fprintf(stdout, "\nLexeme Table:\n");
-    fprintf(stdout, "lexeme\t\ttoken type\n");
-    for(i = 0; i < lexTableIndex; i++)
-        fprintf(stdout, "%s\t\t%d\n", lexTable[i].name, lexTable[i].token);
-
-
-    fprintf(stdout, "\nLexeme List:\n");
+    printf("\n-------------------------------------------");
+    printf("\nLIST OF LEXEMES/TOKENS:\n");
+    fprintf(stdout, "\nInternal Representation:\n");
     for(i = 0; i < lexTableIndex; i++)
     {
         fprintf(stdout, "%d ", lexTable[i].token);
@@ -412,11 +371,22 @@ void printLexTable(lex *lexTable, int lexTableIndex)
         else if(lexTable[i].token == 3)
             fprintf(stdout, "%d ", lexTable[i].value);
     }
-    fprintf(stdout, "\n");
+    fprintf(stdout, "\nSymbolic Representation:\n");
+    for(i = 0; i < lexTableIndex; i++)
+    {
+        fprintf(stdout, "%s ", lexNames[lexTable[i].token - 1]);
+        // If an identifier, print variable name
+        if(lexTable[i].token == 2)
+            fprintf(stdout, "%s ", lexTable[i].name);
+        // If number, print its ascii number value
+        else if(lexTable[i].token == 3)
+            fprintf(stdout, "%d ", lexTable[i].value);
+    }
+    fprintf(stdout, "\n\n\n");
 }
 
 // subject to change
-void lexical()
+void lexical(char *filename)
 {
     FILE *fp;
     char c;
@@ -424,9 +394,9 @@ void lexical()
     int lookedAhead, inComment, lexVal, tempIndex, lexTableIndex = 0;
 
     // Need to fix file pointer
-    readAndPrintFile(argv[1]);
+    readAndPrintFile(filename);
 
-    fp = fopen(argv[1], "r");
+    fp = fopen(filename, "r");
     if (fp == NULL)
     {
         printf("Invalid File Name\n");
@@ -632,11 +602,20 @@ void lexical()
                 c = fgetc(fp);
         }
     }
-
-    printLexTable(lexTable, lexTableIndex);
-
     fclose(fp);
     return 0;
+}
+
+void printCode()
+{
+    int i;
+
+    printf("\n-------------------------------------------\n");
+    printf("GENERATED INTERMEDIAT CODE:\n");
+    for (i = 0; i < iCount; i++)
+    {
+        printf("%d %s %d %d %d\n", i, opTypes[code[i].op], code[i].r, code[i].l, code[i].m);
+    }
 }
 
 void getToken()
@@ -692,7 +671,8 @@ int getSymbol(char **name, int level)
 
 void factor(int level, int reg)
 {
-    int symPos, level, adr, val, kind;
+    int symPos;
+    
     if (token == identsym) 
     {
         symPos = getSymbol(tokName, level); // I think this works
@@ -702,20 +682,15 @@ void factor(int level, int reg)
         }
         else 
         {
-            kind = symbolTable[symPos].kind;
-            level = symbolTable[symPos].level;
-            adr = symbolTable[symPos].addr;
-            val = symbolTable[symPos].val;
-
-            if (kind == 1) 
+            if (symbolTable[symPos].kind == 1) 
             {
                 // LIT
-                addInstruction(1, );
+                addInstruction(1, reg, 0, symbolTable[symPos].val);
             }
-            else if (kind == 2) 
+            else if (symbolTable[symPos].kind == 2) 
             {
                 // LOD
-                addInstruction();
+                addInstruction(3, reg, level - symbolTable[symPos].level, symbolTable[symPos].addr);
             }
             else 
             {
@@ -731,14 +706,14 @@ void factor(int level, int reg)
             printf("Error 25: This number is too large\n");
             number = 0;
         }
-        addInstruction();
+        addInstruction(1, 1, 0, number);
 
         getToken();
     }
     else if (token == lparentsym) 
     {
         getToken();
-        expression(level);
+        expression(level, reg % 2);
 
         if (token == rparentsym) 
         {
@@ -755,58 +730,59 @@ void factor(int level, int reg)
 void term(int level, int reg)
 {
     int lastToken;
-    factor();
+    factor(level, reg % 2);
     while(token == multsym || token == slashsym) 
     {
+        reg++;
         lastToken = token;
         getToken();
-        factor();
+        factor(level, reg % 2);
 
         if(lastToken == multsym) 
         {
-            addInstruction();
+            addInstruction(13, 0, 0, 1);
         }
         else 
         {
-            addInstruction();
+            addInstruction(14, 0, 0, 1);
         }
     }
 }
 
-void expression(int level)
+void expression(int level, int reg)
 {
-    int lastToken, reg = 0;
+    int lastToken;
     if (token == plussym || token == minussym)
     {
         lastToken = token;
         getToken();
-        term(level, reg);
+        term(level, reg % 2);
 
         if (lastToken == minussym)
         {
-            addInstruction();
+            addInstruction(12, 0, 0, 1);
         }
     }
     else
     {
-        term();
+        term(level, reg % 2);
     }
 
     while (token == plussym || token == minussym)
     {
+        reg++;
         lastToken = token;
         getToken();
         term(level, reg % 2);
 
         if (lastToken == plussym)
         {
-            addInstruction();
+            addInstruction(11, 0, 0, 1);
         }
         else
         {
-            addInstruction();
+            addInstruction()12, 0, 0, 1;
         }
-        reg++;
     }
 }
 
@@ -816,20 +792,20 @@ void condition(int level)
     if (token == oddsym)
     {
         getToken();
-        expression(level);
+        expression(level, 0);
         // ODD
         addInstruction(15, 0, 0, 0);
     }
     else
     {
-        expression(level);
+        expression(level, 0);
         if (token != eqsym && token != neqsym && token != leqsym && token != gtrsym && token!= gegsym)
             printf("Error 20: Relational operator expected"\n);
         else
         {
             instructionType = token;
             getToken();
-            expression();
+            expression(level, 0);
 
             switch(instructionType)
             {
@@ -877,7 +853,7 @@ void statement(int level)
         if (token != becomesym)
             printf("Error 13: Assignment operator expected\n");
         getToken();
-        expression();
+        expression(level, 0);
         // Store
         addInstruction(4, 0, level - symbolTable[symPos].level, symbolTable[symPos].addr);
     }
@@ -915,7 +891,7 @@ void statement(int level)
     else if (token == ifsym)
     {
         getToken();
-        condition();
+        condition(level);
         if (token != thensym)
             printf("Error 16: then expected\n");
         getToken();
@@ -929,7 +905,7 @@ void statement(int level)
     {
         cx = iCount;
         getToken();
-        condition();
+        condition(level);
         cx2 = iCount;
         // JPC
         addInstruction(8, 0, 0, 0);
@@ -944,7 +920,7 @@ void statement(int level)
     else if (token == writesym)
     {
         getToken();
-        expression()
+        expression(level, 0)
         // SIO1
         addInstruction(9, 0, 0, 1);
     }
@@ -1026,8 +1002,11 @@ void block(int level)
         }
     } while (token == constsym || token == varsym || token == procsym);
 
+    // INC
     addInstruction(6, 0, 0, incCount);
     statement(level);
+    // RTN
+    addInstructions(2, 0, 0 ,0);
 }
 
 void program()
@@ -1037,14 +1016,36 @@ void program()
 
     if (token != periodsym)
         printf("Error 9: Period expected\n");
+
+    printf("\nFinished execution. Exiting...");
 }
 
 int main(int argc, char **argv)
 {
+    int i, lPrint = 0, aPrint = 0;
     code = calloc(MAX_CODE_LENGTH, sizeof(instruction));
     lexTable = calloc(MAX_LEX_NUMBER, sizeof(lex));
     symbolTable = calloc(MAX_SYMBOL_SIZE, sizeof(symbol));
     tokenCounter = 0;
     iCount = 0;
     sCount = 0;
+    vmPrint = 0;
+
+    for (i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-l") == 0)
+            lPrint = 1;
+        else if (strcmp(argv[i], "-a") == 0)
+            aPrint = 1;
+        else if (strcmp(argv[i], "-v") == 0)
+            vmPrint = 1;
+    }
+
+    lexical(argv[1]);
+    if (lPrint)
+        printLex();
+    program();
+    if (aPrint)
+        printCode();
+    vm();
 }
