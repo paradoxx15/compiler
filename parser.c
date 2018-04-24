@@ -131,10 +131,10 @@ void execute(int *stack, int *registers, counters *counter)
         printf("\n-------------------------------------------\n");
         printf("VIRTUAL MACHINE TRACE:\n");
         printf("Initial Values:\n");
-        printf("PC\tBP\tSP\tStack\n");
+        printf("PC  BP  SP  Stack\n");
         printf("0 1 0 0\n\n");
         printf("Stack Trace:\n");
-        printf("\t\tR L M PC\tBP\tSP\tStack\n");
+        printf("    R L M PC  BP  SP  Stack\n");
     }
 
     while (sioEnd == 0)
@@ -290,7 +290,7 @@ void execute(int *stack, int *registers, counters *counter)
 
         if (vmPrint)
         {
-            printf("%d%-4s%3d%3d%3d%3d%3d%3d ", i++, opTypes[inst.op], inst.r, inst.l, inst.m, counter->pc, counter->bp, counter->sp);
+            printf("%d %-4s%3d%3d%3d%3d%3d%3d ", i++, opTypes[inst.op], inst.r, inst.l, inst.m, counter->pc, counter->bp, counter->sp);
             printStack(counter->sp, counter->bp, stack, counter->lex);
             printf("\nRF:%3d%3d%3d%3d%3d%3d%3d%3d\n",
                 registers[0], registers[1], registers[2], registers[3], registers[4], registers[5], registers[6], registers[7]);
@@ -607,8 +607,7 @@ void printCode()
 
 void getToken()
 {
-    if (lexTable[tokenCounter].token == 2)
-        number = lexTable[tokenCounter].value;
+    number = lexTable[tokenCounter].value;
     tokName = lexTable[tokenCounter].name;
     token = lexTable[tokenCounter++].token;
 }
@@ -699,7 +698,7 @@ void factor(int level, int reg)
             error++;
             number = 0;
         }
-        addInstruction(1, 1, 0, number);
+        addInstruction(1, reg, 0, number);
 
         getToken();
     }
