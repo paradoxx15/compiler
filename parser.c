@@ -690,70 +690,69 @@ int getSymbol(char **name, int level)
     return ret;
 }
 
-void factor()
+void factor(int level, int reg)
 {
-    int i, level, adr, val, kind;
-
-    while (token == identsym || token == numbersym || token == lparentsym)
+    int symPos, level, adr, val, kind;
+    if (token == identsym) 
     {
-        if (token == identsym) 
+        symPos = getSymbol(tokName, level); // I think this works
+        if (i == -1) 
         {
-            i = getSymbol(tokName, level); // I think this works
-            if (i == -1) 
+            printf("Error 11: Undeclared Identifier\n");;
+        }
+        else 
+        {
+            kind = symbolTable[symPos].kind;
+            level = symbolTable[symPos].level;
+            adr = symbolTable[symPos].addr;
+            val = symbolTable[symPos].val;
+
+            if (kind == 1) 
             {
-                printf("Error 11: Undeclared Identifier\n");;
+                // LIT
+                addInstruction(1, );
+            }
+            else if (kind == 2) 
+            {
+                // LOD
+                addInstruction();
             }
             else 
             {
-                kind = symbolTable[i].kind;
-                level = symbolTable[i].level;
-                adr = symbolTable[i].addr;
-                val = symbolTable[i].val;
-
-                if (kind == 1) 
-                {
-                    addInstruction();
-                }
-                else if (kind == 2) 
-                {
-                    addInstruction();
-                }
-                else 
-                {
-                    printf("Error 21: Expression must not contain a procedure identifier\n");
-                }
+                printf("Error 21: Expression must not contain a procedure identifier\n");
             }
-            getToken();
         }
-        else if (token == numbersym) 
+        getToken();
+    }
+    else if (token == numbersym) 
+    {
+        if (number > 99999) 
         {
-            if (number > 99999) 
-            {
-                printf("Error 25: This number is too large\n");
-                number = 0;
-            }
-            addInstruction();
-
-            getToken();
+            printf("Error 25: This number is too large\n");
+            number = 0;
         }
-        else if (token == lparentsym) 
+        addInstruction();
+
+        getToken();
+    }
+    else if (token == lparentsym) 
+    {
+        getToken();
+        expression(level);
+
+        if (token == rparentsym) 
         {
             getToken();
-            expression();
-
-            if (token == rparentsym) 
-            {
-                getToken();
-            }
-            else 
-            {
-                printf("Error 22: Right parenthesis missing\n");
-            }
+        }
+        else 
+        {
+            printf("Error 22: Right parenthesis missing\n");
         }
     }
+
 }
 
-void term()
+void term(int level, int reg)
 {
     int lastToken;
     factor();
@@ -774,14 +773,14 @@ void term()
     }
 }
 
-void expression()
+void expression(int level)
 {
-    int lastToken;
+    int lastToken, reg = 0;
     if (token == plussym || token == minussym)
     {
         lastToken = token;
         getToken();
-        term();
+        term(level, reg);
 
         if (lastToken == minussym)
         {
@@ -797,7 +796,7 @@ void expression()
     {
         lastToken = token;
         getToken();
-        term();
+        term(level, reg % 2);
 
         if (lastToken == plussym)
         {
@@ -807,22 +806,23 @@ void expression()
         {
             addInstruction();
         }
+        reg++;
     }
 }
 
-void condition()
+void condition(int level)
 {
     int instructionType;
     if (token == oddsym)
     {
         getToken();
-        expression();
+        expression(level);
         // ODD
         addInstruction(15, 0, 0, 0);
     }
     else
     {
-        expression();
+        expression(level);
         if (token != eqsym && token != neqsym && token != leqsym && token != gtrsym && token!= gegsym)
             printf("Error 20: Relational operator expected"\n);
         else
@@ -878,13 +878,14 @@ void statement(int level)
             printf("Error 13: Assignment operator expected\n");
         getToken();
         expression();
+        // Store
         addInstruction(4, 0, level - symbolTable[symPos].level, symbolTable[symPos].addr);
     }
     else if (token == callsym)
     {
         getToken();
         if (token != identsym)
-            //error
+            printf("Error 14: Call must be followed by an identifier")
         symPos = getSymbol(tokName, level);
         if (symPos == -1) 
             printf("Error 11: Undeclared Identifier\n");
@@ -894,7 +895,7 @@ void statement(int level)
         if (symbolTable[symPos].kind == 3)
             addInstruction(5, 0, level - symbolTable[symPos].level, symbolTable[symPos].addr);
         else 
-            printf("Error 15: Call of a constant or variable is meaningless");
+            printf("Error 15: Call of a constant or variable is meaningless\n");
 
         getToken();
     }
@@ -908,7 +909,7 @@ void statement(int level)
             statement(level);
         }
         if (token != endsym)
-            // error
+            printf("Error 17: Semicolon or } expected\n");
         getToken();
     }
     else if (token == ifsym)
@@ -916,7 +917,7 @@ void statement(int level)
         getToken();
         condition();
         if (token != thensym)
-            // error
+            printf("Error 16: then expected\n");
         getToken();
         cx = iCount;
         // JPC
@@ -933,7 +934,7 @@ void statement(int level)
         // JPC
         addInstruction(8, 0, 0, 0);
         if (token != dosym)
-            // error
+            printf("Error 18: do expected\n");
         getToken();
         statement(level);
         // JMP back to conditional
