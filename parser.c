@@ -1109,6 +1109,8 @@ int main(int argc, char **argv)
         printCode();
     if (error == 0)
     {
+        printf("\n-------------------------------------------\n");
+        printf("PROGRAM INPUT/OUTPUT:\n");
         vm();
         printf("\nFinished execution. Exiting...");
     }
