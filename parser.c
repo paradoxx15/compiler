@@ -69,13 +69,14 @@ int tokenCounter;
 int token;
 int number;
 int vmPrint;
+int regCount;
 char *tokName;
 char *lexNames[] = {"nulsym", "identsym", "numbersym", "plussym", "minussym", "multsym",  
                    "slashsym", "oddsym", "eqsym", "neqsym", "lessym", "leqsym", "gtrsym", 
                    "geqsym", "lparentsym", "rparentsym", "commasym", "semicolonsym",
                    "periodsym", "becomessym", "beginsym", "endsym", "ifsym", "thensym", 
                    "whilesym", "dosym", "callsym", "constsym", "varsym", "procsym", "writesym", "readsym", "elsesym"};
-char *opTypes[] = {"", "lit", "rtn", "lod", "sto", "cal", "inc", "jmp", "jpc", "sio", "neg",
+char *opTypes[] = {"lit", "rtn", "lod", "sto", "cal", "inc", "jmp", "jpc", "sio", "neg",
                   "add", "sub", "mul", "div", "odd", "mod", "eql", "neq", "lss", "leq",
                   "gtr", "geq"};
 
@@ -120,11 +121,22 @@ void printStack(int sp, int bp, int* stack, int lex){
      }
 }
 
-void execute(int *stack, int *registers, counters *counter)
+void execute()
 {
-    instruction inst;
-    int sioEnd = 0;
+	int check = 1;
+	int test = 0;
+	int lex = 0;
+	int bp = 1;
+	int sp = 0;
+	int pc = 0;
     int i = 0;
+	int *stack;
+	int *registers;
+	instruction next;
+
+	stack = calloc(MAX_STACK_HEIGHT, sizeof(int));
+
+	registers = calloc(8, sizeof(int));
 
     if (vmPrint)
     {
@@ -137,165 +149,167 @@ void execute(int *stack, int *registers, counters *counter)
         printf("    R L M PC  BP  SP  Stack\n");
     }
 
-    while (sioEnd == 0)
-    {
-        inst = code[counter->pc];
-        switch(inst.op)
-        {
-            // lit
-            case 1:
-                registers[inst.r] = inst.m;
-                counter->pc++;
-                break;
+	while (check == 1)
+	{
+		next = code[pc];
 
-            // rtn
-            case 2:
-                counter->sp = counter->bp - 1;
-                counter->bp = stack[counter->sp + 3];
-                counter->pc = stack[counter->sp + 4];
-                counter->lex--;
-                break;
+		switch (next.op)
+		{
+			// LIT
+			case 1:
+				registers[next.r] = next.m;
+				pc++;
+				break;
 
-            // lod
-            case 3:
-                registers[inst.r] = stack[base(inst.l, counter->bp, stack) + inst.m];
-                counter->pc++;
-                break;
+			// RTN
+			case 2:
+				sp = bp - 1;
+				bp = stack[sp + 3];
+				pc = stack[sp + 4];
+				lex--;
+				break;
 
-            // sto
-            case 4:
-                stack[base(inst.l, counter->bp, stack) + inst.m] = registers[inst.r];
-                counter->pc++;
-                break;
+			// LOD
+			case 3:
+				registers[next.r] = stack[base(next.l, bp, stack) + next.m];
+				pc++;
+				break;
 
-            // cal
-            case 5:
-                stack[counter->sp + 1] = 0;
-                stack[counter->sp + 2] = base(inst.l, counter->bp, stack);
-                stack[counter->sp + 3] = counter->bp;
-                stack[counter->sp + 4] = counter->pc + 1;
-                counter->bp = counter->sp + 1;
-                counter->pc = inst.m;
-                counter->lex++;
-                counter->sp += 4;
-                break;
+			// STO
+			case 4:
+				stack[base(next.l, bp, stack) + next.m] = registers[next.r];
+				pc++;
+				break;
 
-            // inc
-            case 6:
-                counter->sp += inst.m;
-                counter->pc++;
-                break;
+			// CAL
+			case 5:
+				stack[sp + 1] = 0; 
+				stack[sp + 2] = base(next.l, bp, stack);
+				stack[sp + 3] = bp;
+				stack[sp + 4] = pc + 1;
+				bp = sp + 1;
+				sp += 4;
+				pc = next.m;
+				lex++;
+				break;
 
-            // jmp
-            case 7:
-                counter->pc = inst.m;
-                break;
+			// INC
+			case 6:
+				sp += next.m;
+				pc++;
+				break;
 
-            // jpc
-            case 8:
-                if (registers[inst.r] == 0)
-                    counter->pc = inst.m;
-                else
-                    counter->pc++;
-                break;
+			// JMP
+			case 7:
+				pc = next.m;
+				break;
 
-            // sio
-            case 9:
-                counter->pc++;
-                if (inst.m == 1)
-                    printf("OUTPUT: %d\n", registers[inst.r]);
-                else if (inst.m == 2)
-                    scanf("%d", &registers[inst.r]);
-                else if (inst.m == 3)
-                    sioEnd = 1;
-                break;
+			// JPC
+			case 8:
+				if (registers[next.r] == 0)
+					pc = next.m;
+				else
+					pc++;
+				break;
 
-            // neg
-            case 10:
-                registers[inst.r] = -registers[inst.l];
-                counter->pc++;
-                break;
+			// SIO
+			case 9:
+				pc++;
+				if (next.m == 1)
+					printf("OUTPUT: %d\n", registers[next.r]);
+				else if (next.m == 2)
+					scanf("%d\n", &registers[next.r]);
+				else if (next.m == 3)
+					check = 0;
+				break;
 
-            // add
-            case 11:
-                registers[inst.r] = registers[inst.l] + registers[inst.m];
-                counter->pc++;
-                break;
+			// NEG
+			case 10:
+				registers[next.r] = (-1) * (registers[next.l]);
+				pc++;
+				break;
 
-            // sub
-            case 12:
-                registers[inst.r] = registers[inst.l] - registers[inst.m];
-                counter->pc++;
-                break;
+			// ADD
+			case 11:
+				registers[next.r] = registers[next.l] + registers[next.m];
+				pc++;
+				break;
 
-            // mul
-            case 13:
-                registers[inst.r] = registers[inst.l] * registers[inst.m];
-                counter->pc++;
-                break;
+			// SUB
+			case 12:
+				registers[next.r] = registers[next.l] - registers[next.m];
+				pc++;
+				break;
 
-            // div
-            case 14:
-                registers[inst.r] = registers[inst.l] / registers[inst.m];
-                counter->pc++;
-                break;
+			// MULT
+			case 13:
+				registers[next.r] = (registers[next.l]) * (registers[next.m]);
+				pc++;
+				break;
 
-            // odd
-            case 15:
-                registers[inst.r] = registers[inst.r] % 2;
-                counter->pc++;
-                break;
+			// DIV
+			case 14:
+				registers[next.r] = (registers[next.l]) / (registers[next.m]);
+				pc++;
+				break;
 
-            // mod
-            case 16:
-                registers[inst.r] = registers[inst.l] % registers[inst.m];
-                counter->pc++;
-                break;
+			// ODD
+			case 15:
+				registers[next.r] = (registers[next.r]) % 2;
+				pc++;
+				break;
 
-            // eql
-            case 17:
-                registers[inst.r] = registers[inst.l] == registers[inst.m];
-                break;
+			// MOD
+			case 16:
+				registers[next.r] = (registers[next.l]) % (registers[next.m]);
+				pc++;
+				break;
 
-            // neq
-            case 18:
-                registers[inst.r] = registers[inst.l] != registers[inst.m];
-                counter->pc++;
-                break;
+			// EQL
+			case 17:
+				registers[next.r] = ((registers[next.l]) == (registers[next.m]));
+				pc++;
+				break;
 
-            // lss
-            case 19:
-                registers[inst.r] = registers[inst.l] < registers[inst.m];
-                counter->pc++;
-                break;
+			// NEQ
+			case 18:
+				registers[next.r] = ((registers[next.l]) != (registers[next.m]));
+				pc++;
+				break;
 
-            // leq
-            case 20:
-                registers[inst.r] = registers[inst.l] <= registers[inst.m];
-                counter->pc++;
-                break;
+			// LSS
+			case 19:
+				registers[next.r] = ((registers[next.l]) < (registers[next.m]));
+				pc++;
+				break;
 
-            // gtr
-            case 21:
-                registers[inst.r] = registers[inst.l] > registers[inst.m];
-                counter->pc++;
-                break;
+			// LEQ
+			case 20:
+				registers[next.r] = ((registers[next.l]) <= (registers[next.m]));
+				pc++;
+				break;
 
-            // geq
-            case 22:
-                registers[inst.r] = registers[inst.l] >= registers[inst.m];
-                counter->pc++;
-                break;   
-        }
+			// GTR
+			case 21:
+				registers[next.r] = ((registers[next.l]) > (registers[next.m]));
+				pc++;
+				break;
+
+			// GEQ
+			case 22:
+				registers[next.r] = ((registers[next.l]) >= (registers[next.m]));
+				pc++;
+				break;
+		}
 
         if (vmPrint)
         {
-            printf("%d %-4s%3d%3d%3d%3d%3d%3d ", i++, opTypes[inst.op], inst.r, inst.l, inst.m, counter->pc, counter->bp, counter->sp);
-            printStack(counter->sp, counter->bp, stack, counter->lex);
-            printf("\nRF:%3d%3d%3d%3d%3d%3d%3d%3d\n",
-                registers[0], registers[1], registers[2], registers[3], registers[4], registers[5], registers[6], registers[7]);
+		    printf("%d %-4s%3d%3d%3d%3d%3d%3d ", i++, opTypes[next.op-1], next.r, lex, next.m, pc, bp, sp);
+		    printStack(sp, bp, stack, lex);
+		    printf("\n\tRF:%3d%3d%3d%3d%3d%3d%3d%3d\n", 
+		    	registers[0], registers[1], registers[2], registers[3], registers[4], registers[5], registers[6], registers[7]);
         }
-    }
+	}
 }
 
 // subject to change
@@ -312,7 +326,7 @@ void vm()
     counter->bp = 1;
 
     // Need to remove file pointer
-    execute(stack, registers, counter);
+    execute();
 }
 
 int checkReserved(char *word)
@@ -601,7 +615,7 @@ void printCode()
     printf("GENERATED INTERMEDIATE CODE:\n");
     for (i = 0; i < iCount; i++)
     {
-        printf("%3d %s %d %d %d\n", i, opTypes[code[i].op], code[i].r, code[i].l, code[i].m);
+        printf("%3d %s %d %d %d\n", i, opTypes[code[i].op - 1], code[i].r, code[i].l, code[i].m);
     }
 }
 
@@ -675,12 +689,12 @@ void factor(int level, int reg)
             if (symbolTable[symPos].kind == 1) 
             {
                 // LIT
-                addInstruction(1, reg, 0, symbolTable[symPos].val);
+                addInstruction(1, regCount++, 0, symbolTable[symPos].val);
             }
             else if (symbolTable[symPos].kind == 2) 
             {
                 // LOD
-                addInstruction(3, reg, level - symbolTable[symPos].level, symbolTable[symPos].addr);
+                addInstruction(3, regCount++, level - symbolTable[symPos].level, symbolTable[symPos].addr);
             }
             else 
             {
@@ -698,14 +712,15 @@ void factor(int level, int reg)
             error++;
             number = 0;
         }
-        addInstruction(1, reg, 0, number);
+        // LIT
+        addInstruction(1, regCount++, 0, number);
 
         getToken();
     }
     else if (token == lparentsym) 
     {
         getToken();
-        expression(level, reg % 2);
+        expression(level, reg + 1);
 
         if (token == rparentsym) 
         {
@@ -723,21 +738,24 @@ void factor(int level, int reg)
 void term(int level, int reg)
 {
     int lastToken;
-    factor(level, reg % 2);
+    factor(level, reg);
     while(token == multsym || token == slashsym) 
     {
-        reg++;
         lastToken = token;
         getToken();
-        factor(level, reg % 2);
+        factor(level, reg);
 
         if(lastToken == multsym) 
         {
-            addInstruction(13, 0, 0, 1);
+            addInstruction(13, regCount - 2, regCount - 2, regCount - 1);
+            if (regCount >= 1)
+                regCount--;
         }
         else 
         {
-            addInstruction(14, 0, 0, 1);
+            addInstruction(14, regCount - 2, regCount - 2, regCount - 1);
+            if (regCount >= 1)
+                regCount--;
         }
     }
 }
@@ -749,32 +767,35 @@ void expression(int level, int reg)
     {
         lastToken = token;
         getToken();
-        term(level, reg % 2);
+        term(level, reg);
 
         if (lastToken == minussym)
         {
-            addInstruction(10, 0, 0, 0);
+            addInstruction(10, regCount, regCount, 0);
         }
     }
     else
     {
-        term(level, reg % 2);
+        term(level, reg);
     }
 
     while (token == plussym || token == minussym)
     {
-        reg++;
         lastToken = token;
         getToken();
-        term(level, reg % 2);
+        term(level, reg);
 
         if (lastToken == plussym)
         {
-            addInstruction(11, 0, 0, 1);
+            addInstruction(11, regCount - 2, regCount - 2, regCount - 1);
+            if (regCount >= 1)
+                regCount--;
         }
         else
         {
-            addInstruction(12, 0, 0, 1);
+            addInstruction(12, regCount - 2, regCount - 2, regCount - 1);
+            if (regCount >= 1)
+                regCount--;
         }
     }
 }
@@ -792,7 +813,9 @@ void condition(int level)
     else
     {
         expression(level, 0);
-        if (token != eqsym && token != neqsym && token != leqsym && token != lessym && token != gtrsym && token!= geqsym)
+        // remove
+        //printf("Token = %d", token);
+        if (token != eqsym && token != neqsym && token != lessym && token != leqsym && token != gtrsym && token!= geqsym)
         {
             printf("Error 20: Relational operator expected\n");
             error++;
@@ -837,7 +860,7 @@ void condition(int level)
 void statement(int level)
 {
     int symPos, cx, cx2;
-
+    regCount = 0;
     if (token == identsym)
     {
         symPos = getSymbol(tokName, level);
@@ -1090,6 +1113,7 @@ int main(int argc, char **argv)
     lCount = 0;
     error = 0;
     vmPrint = 0;
+    regCount = 0;
 
     for (i = 1; i < argc; i++)
     {
