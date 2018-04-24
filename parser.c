@@ -692,65 +692,58 @@ int getSymbol(char **name, int level)
 
 void factor()
 {
-    int i, level, adr, val, kind;
-
-    while (token == identsym || token == numbersym || token == lparentsym)
+    int symPos;
+    
+    if (token == identsym) 
     {
-        if (token == identsym) 
+        symPos = getSymbol(tokName, level); // I think this works
+        if (i == -1) 
         {
-            i = getSymbol(tokName, level); // I think this works
-            if (i == -1) 
+            printf("Error 11: Undeclared Identifier\n");;
+        }
+        else 
+        {
+            if (symbolTable[symPos].kind == 1) 
             {
-                printf("Error 11: Undeclared Identifier\n");;
+                addInstruction(1, 1, 0, symbolTable[symPos].val);
+            }
+            else if (symbolTable[symPos].kind == 2) 
+            {
+                addInstruction(3, 1, level - symbolTable[symPos].level, symbolTable[symPos].addr);
             }
             else 
             {
-                kind = symbolTable[i].kind;
-                level = symbolTable[i].level;
-                adr = symbolTable[i].addr;
-                val = symbolTable[i].val;
-
-                if (kind == 1) 
-                {
-                    addInstruction();
-                }
-                else if (kind == 2) 
-                {
-                    addInstruction();
-                }
-                else 
-                {
-                    printf("Error 21: Expression must not contain a procedure identifier\n");
-                }
+                printf("Error 21: Expression must not contain a procedure identifier\n");
             }
-            getToken();
         }
-        else if (token == numbersym) 
+        getToken();
+    }
+    else if (token == numbersym) 
+    {
+        if (number > 99999) 
         {
-            if (number > 99999) 
-            {
-                printf("Error 25: This number is too large\n");
-                number = 0;
-            }
-            addInstruction();
-
-            getToken();
+            printf("Error 25: This number is too large\n");
+            number = 0;
         }
-        else if (token == lparentsym) 
+        addInstruction(1, 1, 0, number);
+
+        getToken();
+    }
+    else if (token == lparentsym) 
+    {
+        getToken();
+        expression();
+
+        if (token == rparentsym) 
         {
             getToken();
-            expression();
-
-            if (token == rparentsym) 
-            {
-                getToken();
-            }
-            else 
-            {
-                printf("Error 22: Right parenthesis missing\n");
-            }
+        }
+        else 
+        {
+            printf("Error 22: Right parenthesis missing\n");
         }
     }
+
 }
 
 void term()
@@ -765,11 +758,11 @@ void term()
 
         if(lastToken == multsym) 
         {
-            addInstruction();
+            addInstruction(13, 0, 0, 1);
         }
         else 
         {
-            addInstruction();
+            addInstruction(14, 0, 0, 1);
         }
     }
 }
@@ -785,7 +778,7 @@ void expression()
 
         if (lastToken == minussym)
         {
-            addInstruction();
+            addInstruction(12, 0, 0, 1);
         }
     }
     else
@@ -801,11 +794,11 @@ void expression()
 
         if (lastToken == plussym)
         {
-            addInstruction();
+            addInstruction(11, 0, 0, 1);
         }
         else
         {
-            addInstruction();
+            addInstruction()12, 0, 0, 1;
         }
     }
 }
