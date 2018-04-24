@@ -63,9 +63,11 @@ instruction *code;
 lex *lexTable;
 symbol *symbolTable;
 int iCount;
+int sCount;
 int tokenCounter;
 int token;
 int number;
+char **tokName;
 char **lexNames = {"nulsym", "identsym", "numbersym", "plussym", "minussym", "multsym",  
                    "slashsym", "oddsym", "eqsym", "neqsym", "lessym", "leqsym", "gtrsym", 
                    "geqsym", "lparentsym", "rparentsym", "commasym", "semicolonsym",
@@ -637,12 +639,12 @@ void lexical()
     return 0;
 }
 
-int getToken()
+void getToken()
 {
     if (lexTable[tokenCounter].token == 2)
         number = lexTable[tokenCounter].value;
-        
-    return lexTable[tokenCounter++].token;
+    tokName = lexTable[tokenCounter].name;
+    token = lexTable[tokenCounter++].token;
 }
 void addInstruction(int op, int r, int l, int m)
 {
@@ -651,6 +653,41 @@ void addInstruction(int op, int r, int l, int m)
         code[iCount].l = l;
         code[iCount].m = m;
         iCount++;
+}
+void addSymbol(int kind, char **name, int val, int level, int addr)
+{
+    symbolTable[sCount].kind = kind;
+    symbolTable[sCount].name = name;
+
+    if (kind == 1)
+        symbolTable[sCount].val= val;
+    else
+    {
+        symbolTable[sCount].level = level;
+        symbolTable[sCount].addr = addr;
+    }
+    sCount++;
+}
+
+int getSymbol(char **name, int level)
+{
+    int levDif, prevLevDif = 0, ret = -1, difCount = 0;
+
+    for (int i = sCount - 1; i >= 0; i--)
+    {
+        if (strcmp(name, symbolTable[i].name) == 0)
+        {
+            levDif = level - symbolTable[i].level;
+
+            if (levDif < preLevDif || difCount == 0)
+            {
+                ret = i;
+                preLevDif = levDif;
+                difCount++;
+            }
+        }
+    }
+    return ret;
 }
 
 void factor()
@@ -661,8 +698,8 @@ void factor()
     {
         if (token == identsym) 
         {
-            i = position(); // Not sure what we need here
-            if (i == 0) 
+            i = getSymbol(tokName, level); // I think this works
+            if (i == -1) 
             {
                 printf("Error 11: Undeclared Identifier\n");;
             }
@@ -686,7 +723,7 @@ void factor()
                     printf("Error 21: Expression must not contain a procedure identifier\n");
                 }
             }
-            token = getToken();
+            getToken();
         }
         else if (token == numbersym) 
         {
@@ -697,16 +734,16 @@ void factor()
             }
             addInstruction();
 
-            token = getToken();
+            getToken();
         }
         else if (token == lparentsym) 
         {
-            token = getToken();
+            getToken();
             expression();
 
             if (token == rparentsym) 
             {
-                token = getToken();
+                getToken();
             }
             else 
             {
@@ -723,7 +760,7 @@ void term()
     while(token == multsym || token == slashsym) 
     {
         lastToken = token;
-        token = getToken();
+        getToken();
         factor();
 
         if(lastToken == multsym) 
@@ -743,7 +780,7 @@ void expression()
     if (token == plussym || token == minussym)
     {
         lastToken = token;
-        token = getToken();
+        getToken();
         term();
 
         if (lastToken == minussym)
@@ -759,7 +796,7 @@ void expression()
     while (token == plussym || token == minussym)
     {
         lastToken = token;
-        token = getToken();
+        getToken();
         term();
 
         if (lastToken == plussym)
@@ -775,53 +812,225 @@ void expression()
 
 void condition()
 {
-
-}
-
-void statement()
-{
-    // will have write and read
-}
-
-void block()
-{
-    do 
+    int instructionType;
+    if (token == oddsym)
     {
-         if (token == constsym)
+        getToken();
+        expression();
+        // OPR ODD
+        addInstruction(2, 0, 0, 6);
+    }
+    else
+    {
+        expression();
+        if (token != eqsym && token != neqsym && token != leqsym && token != gtrsym && token!= gegsym)
+            printf("Error 20: Relational operator expected"\n);
+        else
+        {
+            instructionType = token;
+            getToken();
+            expression();
+
+            switch(instructionType)
+            {
+                case eqsym:
+                    // OPR EQL
+                    addInstruction(2,0,0,8);
+                    break; 
+                case neqsym:
+                    // OPR NEQ
+                    addInstruction(2,0,0,9);
+                    break; 
+                case lessym:
+                    // OPR LSS
+                    addInstruction(2,0,0,10);
+                    break; 
+                case leqsym:
+                    // OPR LEQ
+                    addInstruction(2,0,0,11);
+                    break; 
+                case gtrsym:
+                    // OPR GTR
+                    addInstruction(2,0,0,12);
+                    break; 
+                case gegsym:
+                    // OPR GEQ
+                    addInstruction(2,0,0,13);
+                    break; 
+            }
+        }
+    }
+}
+
+void statement(int level)
+{
+    int symPos, cx, cx2;
+
+    if (token == identsym)
+    {
+        symPos = getSymbol(tokName, level);
+        if (symPos == -1)
+            printf("Error 11: Undeclared Identifier\n");
+        if (symbolTable[symPos].kind != 2)
+            printf("Error 12: Assignment to constant or procedure is not allowed\n");
+        getToken();
+        if (token != becomesym)
+            printf("Error 13: Assignment operator expected\n");
+        getToken();
+        expression();
+        addInstruction(4, 0, level - symbolTable[symPos].level, symbolTable[symPos].addr);
+    }
+    else if (token == callsym)
+    {
+        getToken();
+        if (token != identsym)
+            //error
+        symPos = getSymbol(tokName, level);
+        if (symPos == -1) 
+            printf("Error 11: Undeclared Identifier\n");;
+        // adds CAL instruction if symbol is a procedure
+        if (symbolTable[symPos].kind == 3)
+            addInstruction(5, 0, level - symbolTable[symPos].level, symbolTable[symPos].addr);
+        else 
+            printf("Error 15: Call of a constant or variable is meaningless");
+
+        getToken();
+    }
+    else if (token == beginsym)
+    {
+        getToken();
+        statement(level);
+        while (token == semicolonsym)
+        {
+            getToken();
+            statement(level);
+        }
+        if (token != endsym)
+            // error
+        getToken();
+    }
+    else if (token == ifsym)
+    {
+        getToken();
+        condition();
+        if (token != thensym)
+            // error
+        getToken();
+        cx = iCount;
+        addInstruction(8, 0, 0, 0);
+        statement();
+        code[cx].m = iCount;
+    }
+    else if (token == whilesym)
+    {
+        cx = iCount;
+        getToken();
+        condition();
+        cx2 = iCount;
+        // JPC
+        addInstruction(8, 0, 0, 0);
+        if (token != dosym)
+            // error
+        getToken();
+        statement(level);
+        // JMP back to conditional
+        addInstruction(7, 0, 0, cx));
+        code[cx2].m = iCount;
+    }
+    else if (token == writesym)
+    {
+        getToken();
+        expression()
+        // SIO1
+        addInstruction(9, 0, 0, 1);
+    }
+    else if (token == readsym)
+    {
+        getToken();
+        // SIO2
+        addInstruction(10, 0, 0, 2);
+        symPos = getSymbol(tokName, level);
+        if (symPos == -1)
+            printf("Error 11: Undeclared identifier");
+        else if (symbolTable[symPos].kind != 2)
+            printf("Error 12: Assignment to constant or procedure is not allowed");
+        else
+            addInstruction(4, 0, level - symbolTable[symPos].level, symbolTable[symPos].addr);
+        getToken();
+    }
+}
+
+void block(int level)
+{
+    char **name;
+    int num, incCount = 4;
+
+    do 
+    {   
+        if (token == constsym)
         {
             do 
             {
-                token = getToken();
+                getToken();
                 if (token != identsym)
-                    // error
-                token = getToken();
+                    printf("Error 4: const, var, procedure must be followed by indentifier\n");
+                name = tokName;
+                getToken();
                 if (token != eqsym)
-                    //error
-                token = getToken();
+                     printf("Error 3: identifier must be followed by =\n");
+                getToken();
                 if (token != numbersym)
-                    // error
-                token = getToken();
+                    printf("Error 2: = must be followed by a number\n")
+                num = number;
+                getToken();
+                addSymbol(1, name, num, 0, 0);
             } while (token == commasym);
             
             if (token != semicolonsym)
-                //error
-            token = getToken();
+                printf("Error 5: Semicolon or comma missing\n")
+            getToken();
         }
+
         if (token == varsym)
         {
-
+            do 
+            {
+                getToken();
+                if (token != identsym)
+                    printf("Error 4: const, var, procedure must be followed by indentifier\n");
+                name = tokName;
+                getToken();
+                addSymbol(2, name, 0, level, incCount++);
+            } while (token == commasym)
         }
+
         while (token == procsym)
         {
-
+            getToken();
+            if (token != identsym)
+                printf("Error 4: const, var, procedure must be followed by indentifier\n");
+            name = tokName;
+            getToken();
+            if (token != semicolonsym)
+                printf("Error 5: Semicolon or comma missing\n");
+            getToken();
+            block(level + 1);
+            if (token != semicolonsym)
+                printf("Error 5: Semicolon or comma missing\n");
+            getToken();
+            addSymbol(3, name, 0, level, incCount);
         }
-    } while (token == constsym || token == varsym || token == procsym)
+    } while (token == constsym || token == varsym || token == procsym);
+
+   // emit(Inc, dx);
+    addInstruction(6, 0, 0, incCount);
+    statement(level);
 }
 
 void program()
 {
-    token = getToken();
-    block();
+    getToken();
+    block(0);
 
     if (token != periodsym)
         printf("Error 9: Period expected\n");
@@ -834,4 +1043,5 @@ int main(int argc, char **argv)
     symbolTable = calloc(MAX_SYMBOL_SIZE, sizeof(symbol));
     tokenCounter = 0;
     iCount = 0;
+    sCount = 0;
 }
