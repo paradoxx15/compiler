@@ -45,24 +45,26 @@ typedef struct counters
 typedef struct 
 { 
     int kind; // const = 1, var = 2, proc = 3
-    char name[12];// name up to 11 chars
+    char *name;// name up to 11 chars
     int val; // number (ASCII value) 
     int level; // L level
     int addr; // M address
 } symbol; 
 
 enum tokens {nulsym = 1, identsym = 2, numbersym = 3, plussym = 4, minussym = 5, multsym = 6,  
-             slashsym = 7, oddsym = 8, eqsym = 9, neqsym = 10, lessym = 12, leqsym = 13,gtrsym = 14, 
-             geqsym = 15, lparentsym = 16, rparentsym = 17, commasym = 18, semicolonsym = 19,
-             periodsym = 20, becomessym = 21, beginsym = 22, endsym = 23, ifsym = 24, thensym = 26, 
-             whilesym = 27, dosym = 28, callsym = 29, constsym = 30, varsym = 31, procsym = 33, 
-             writesym = 34, readsym = 35, elsesym = 36} token_type;
+             slashsym = 7, oddsym = 8, eqsym = 9, neqsym = 10, lessym = 11, leqsym = 12, gtrsym = 13, 
+             geqsym = 14, lparentsym = 15, rparentsym = 16, commasym = 17, semicolonsym = 18,
+             periodsym = 19, becomessym = 20, beginsym = 21, endsym = 22, ifsym = 23, thensym = 24, 
+             whilesym = 25, dosym = 26, callsym = 27, constsym = 28, varsym = 29, procsym = 30, 
+             writesym = 31, readsym = 32, elsesym = 33} token_type;
 
 instruction *code;
 lex *lexTable;
 symbol *symbolTable;
 int iCount;
 int sCount;
+int lCount;
+int error;
 int tokenCounter;
 int token;
 int number;
@@ -76,6 +78,14 @@ char *lexNames[] = {"nulsym", "identsym", "numbersym", "plussym", "minussym", "m
 char *opTypes[] = {"", "lit", "rtn", "lod", "sto", "cal", "inc", "jmp", "jpc", "sio", "neg"
                   "add", "sub", "mul", "div", "odd", "mod", "eql", "neq", "lss", "leq"
                   "gtr", "geq"};
+
+void factor(int level, int reg);
+void term(int level, int reg);
+void expression(int level, int reg);
+void condition(int level);
+void statement(int level);
+void block(int level);
+void program();
 
 int base(int l, int base, int *stack)
 {
@@ -305,25 +315,6 @@ void vm()
     execute(stack, registers, counter);
 }
 
-void readAndPrintFile(char *filename)
-{
-    FILE *fp;
-    char *line = NULL;
-	size_t len = 0;
-	ssize_t read;
- 
-	fp = fopen(filename, "r");
-	if (fp == NULL)
-		return;
-
-    fprintf(stdout, "Source Program:%s\n", filename);
-	while ((read = getline(&line, &len, fp)) != -1) {
-        fprintf(stdout, "%s", line);
-	}
-    fclose(fp);
-    fprintf(stdout, "\n");
-}
-
 int checkReserved(char *word)
 {
         if (strcmp(word, "begin") == 0)
@@ -356,13 +347,13 @@ int checkReserved(char *word)
             return 2;
 }
 
-void printLex(lex *lexTable, int lexTableIndex)
+void printLex()
 {
     int i;
     printf("\n-------------------------------------------");
     printf("\nLIST OF LEXEMES/TOKENS:\n");
     fprintf(stdout, "\nInternal Representation:\n");
-    for(i = 0; i < lexTableIndex; i++)
+    for(i = 0; i < lCount; i++)
     {
         fprintf(stdout, "%d ", lexTable[i].token);
         // If an identifier, print variable name
@@ -372,8 +363,8 @@ void printLex(lex *lexTable, int lexTableIndex)
         else if(lexTable[i].token == 3)
             fprintf(stdout, "%d ", lexTable[i].value);
     }
-    fprintf(stdout, "\nSymbolic Representation:\n");
-    for(i = 0; i < lexTableIndex; i++)
+    fprintf(stdout, "\n\nSymbolic Representation:\n");
+    for(i = 0; i < lCount; i++)
     {
         fprintf(stdout, "%s ", lexNames[lexTable[i].token - 1]);
         // If an identifier, print variable name
@@ -392,10 +383,7 @@ void lexical(char *filename)
     FILE *fp;
     char c;
     char *lexName;
-    int lookedAhead, inComment, lexVal, tempIndex, lexTableIndex = 0;
-
-    // Need to fix file pointer
-    readAndPrintFile(filename);
+    int lookedAhead, inComment, lexVal, tempIndex;
 
     fp = fopen(filename, "r");
     if (fp == NULL)
@@ -434,11 +422,12 @@ void lexical(char *filename)
                 else
                 {
                     printf("Error: Identifier too long.");
+                    error++;
                 }
             }
             
-            lexTable[lexTableIndex].name = lexName;
-            lexTable[lexTableIndex++].token = checkReserved(lexName);
+            lexTable[lCount].name = lexName;
+            lexTable[lCount++].token = checkReserved(lexName);
         }
         // Builds numbersymbol
         else if (isdigit(c))
@@ -462,17 +451,19 @@ void lexical(char *filename)
                 else 
                 {
                     printf("Error: Number too large");
+                    error++;
                 }       
             }
 
             if (isalpha(c))
             {
                 printf("Error: Invalid Identifier");
+                error++;
             }
 
-            lexTable[lexTableIndex].name = lexName;
-            lexTable[lexTableIndex].value = lexVal;
-            lexTable[lexTableIndex++].token = 3; // numsym token
+            lexTable[lCount].name = lexName;
+            lexTable[lCount].value = lexVal;
+            lexTable[lCount++].token = 3; // numsym token
         }
         // Checks character c with special symbols
         else 
@@ -481,16 +472,16 @@ void lexical(char *filename)
             switch (c)
             {
                 case '+':
-                    lexTable[lexTableIndex].name = "+";
-                    lexTable[lexTableIndex++].token = 4;
+                    lexTable[lCount].name = "+";
+                    lexTable[lCount++].token = 4;
                     break;
                 case '-':
-                    lexTable[lexTableIndex].name = "-";
-                    lexTable[lexTableIndex++].token = 5;
+                    lexTable[lCount].name = "-";
+                    lexTable[lCount++].token = 5;
                     break;
                 case '*':
-                    lexTable[lexTableIndex].name = "*";
-                    lexTable[lexTableIndex++].token = 6;
+                    lexTable[lCount].name = "*";
+                    lexTable[lCount++].token = 6;
                     break;
                 case '/':
                     // Used for comments
@@ -517,82 +508,83 @@ void lexical(char *filename)
                     else
                     {
                         lookedAhead = 1;
-                        lexTable[lexTableIndex].name = "/";
-                        lexTable[lexTableIndex++].token = 7;
+                        lexTable[lCount].name = "/";
+                        lexTable[lCount++].token = 7;
                     }
                     break;
                 case '%':
-                    lexTable[lexTableIndex].name = "%";
-                    lexTable[lexTableIndex++].token = 8;
+                    lexTable[lCount].name = "%";
+                    lexTable[lCount++].token = 8;
                     break;
                 case '(':
-                    lexTable[lexTableIndex].name = "(";
-                    lexTable[lexTableIndex++].token = 15;
+                    lexTable[lCount].name = "(";
+                    lexTable[lCount++].token = 15;
                     break;
                 case ')':
-                    lexTable[lexTableIndex].name = ")";
-                    lexTable[lexTableIndex++].token = 16;
+                    lexTable[lCount].name = ")";
+                    lexTable[lCount++].token = 16;
                     break;
                 case '=':
-                    lexTable[lexTableIndex].name = "=";
-                    lexTable[lexTableIndex++].token = 9;
+                    lexTable[lCount].name = "=";
+                    lexTable[lCount++].token = 9;
                     break;
                 case ',':
-                    lexTable[lexTableIndex].name = ",";
-                    lexTable[lexTableIndex++].token = 17;
+                    lexTable[lCount].name = ",";
+                    lexTable[lCount++].token = 17;
                     break;
                 case '.':
-                    lexTable[lexTableIndex].name = ".";
-                    lexTable[lexTableIndex++].token = 19;
+                    lexTable[lCount].name = ".";
+                    lexTable[lCount++].token = 19;
                     break;
                 case '<':
                     c = fgetc(fp);
                     if (c == '=')
                     {
-                        lexTable[lexTableIndex].name = "<=";
-                        lexTable[lexTableIndex++].token = 12;
+                        lexTable[lCount].name = "<=";
+                        lexTable[lCount++].token = 12;
                     }
                     else if ( c == '>')
                     {
-                        lexTable[lexTableIndex].name = "<>";
-                        lexTable[lexTableIndex++].token = 10;
+                        lexTable[lCount].name = "<>";
+                        lexTable[lCount++].token = 10;
                     }
                     else
                     {
                         lookedAhead = 1;
-                        lexTable[lexTableIndex].name = "<";
-                        lexTable[lexTableIndex++].token = 11;
+                        lexTable[lCount].name = "<";
+                        lexTable[lCount++].token = 11;
                     }
                     break;
                 case '>':
                     c = fgetc(fp);
                     if (c == '=')
                     {
-                        lexTable[lexTableIndex].name = ">=";
-                        lexTable[lexTableIndex++].token = 14;
+                        lexTable[lCount].name = ">=";
+                        lexTable[lCount++].token = 14;
                     }
                     else
                     {
                         lookedAhead = 1;
-                        lexTable[lexTableIndex].name = ">";
-                        lexTable[lexTableIndex++].token = 13;
+                        lexTable[lCount].name = ">";
+                        lexTable[lCount++].token = 13;
                     }
                     break;
                 case ';':
-                    lexTable[lexTableIndex].name = ";";
-                    lexTable[lexTableIndex++].token = 18;
+                    lexTable[lCount].name = ";";
+                    lexTable[lCount++].token = 18;
                     break;
                 case ':':
                     c = fgetc(fp);
                     // encloses break since : is invalid
                     if (c == '=')
                     {
-                        lexTable[lexTableIndex].name = ":=";
-                        lexTable[lexTableIndex++].token = 20;
+                        lexTable[lCount].name = ":=";
+                        lexTable[lCount++].token = 20;
                         break;
                     }
                 default:
                     printf("Error: Invalid symbol.");
+                    error++;
             }
             if (!lookedAhead)
                 c = fgetc(fp);
@@ -604,9 +596,9 @@ void lexical(char *filename)
 void printCode()
 {
     int i;
-
-    printf("\n-------------------------------------------\n");
-    printf("GENERATED INTERMEDIAT CODE:\n");
+    printf("\nCode is syntactically correct. Assembly code generated successfully.\n");
+    printf("-------------------------------------------\n");
+    printf("GENERATED INTERMEDIATE CODE:\n");
     for (i = 0; i < iCount; i++)
     {
         printf("%d %s %d %d %d\n", i, opTypes[code[i].op], code[i].r, code[i].l, code[i].m);
@@ -628,7 +620,7 @@ void addInstruction(int op, int r, int l, int m)
         code[iCount].m = m;
         iCount++;
 }
-void addSymbol(int kind, char **name, int val, int level, int addr)
+void addSymbol(int kind, char *name, int val, int level, int addr)
 {
     symbolTable[sCount].kind = kind;
     symbolTable[sCount].name = name;
@@ -643,7 +635,7 @@ void addSymbol(int kind, char **name, int val, int level, int addr)
     sCount++;
 }
 
-int getSymbol(char **name, int level)
+int getSymbol(char *name, int level)
 {
     int levDif, prevLevDif = 0, ret = -1, difCount = 0;
 
@@ -651,13 +643,16 @@ int getSymbol(char **name, int level)
     {
         if (strcmp(name, symbolTable[i].name) == 0)
         {
-            levDif = level - symbolTable[i].level;
-
-            if (levDif < preLevDif || difCount == 0)
+            if (level >= symbolTable[i].level)
             {
-                ret = i;
-                preLevDif = levDif;
-                difCount++;
+                levDif = level - symbolTable[i].level;
+
+                if (levDif < prevLevDif || difCount == 0)
+                {
+                    ret = i;
+                    prevLevDif = levDif;
+                    difCount++;
+                }
             }
         }
     }
@@ -671,9 +666,10 @@ void factor(int level, int reg)
     if (token == identsym) 
     {
         symPos = getSymbol(tokName, level); // I think this works
-        if (i == -1) 
+        if (symPos == -1) 
         {
-            printf("Error 11: Undeclared Identifier\n");;
+            printf("Error 11: Undeclared Identifier\n");
+            error++;
         }
         else 
         {
@@ -690,6 +686,7 @@ void factor(int level, int reg)
             else 
             {
                 printf("Error 21: Expression must not contain a procedure identifier\n");
+                error++;
             }
         }
         getToken();
@@ -699,6 +696,7 @@ void factor(int level, int reg)
         if (number > 99999) 
         {
             printf("Error 25: This number is too large\n");
+            error++;
             number = 0;
         }
         addInstruction(1, 1, 0, number);
@@ -717,6 +715,7 @@ void factor(int level, int reg)
         else 
         {
             printf("Error 22: Right parenthesis missing\n");
+            error++;
         }
     }
 
@@ -776,7 +775,7 @@ void expression(int level, int reg)
         }
         else
         {
-            addInstruction()12, 0, 0, 1;
+            addInstruction(12, 0, 0, 1);
         }
     }
 }
@@ -794,8 +793,11 @@ void condition(int level)
     else
     {
         expression(level, 0);
-        if (token != eqsym && token != neqsym && token != leqsym && token != gtrsym && token!= gegsym)
-            printf("Error 20: Relational operator expected"\n);
+        if (token != eqsym && token != neqsym && token != leqsym && token != gtrsym && token!= geqsym)
+        {
+            printf("Error 20: Relational operator expected\n");
+            error++;
+        }
         else
         {
             instructionType = token;
@@ -824,7 +826,7 @@ void condition(int level)
                     // GTR
                     addInstruction(21,0,0,1);
                     break; 
-                case gegsym:
+                case geqsym:
                     // GEQ
                     addInstruction(22,0,0,1);
                     break; 
@@ -841,12 +843,21 @@ void statement(int level)
     {
         symPos = getSymbol(tokName, level);
         if (symPos == -1)
+        {
             printf("Error 11: Undeclared Identifier\n");
+            error++;
+        }
         if (symbolTable[symPos].kind != 2)
+        {
             printf("Error 12: Assignment to constant or procedure is not allowed\n");
+            error++;
+        }
         getToken();
-        if (token != becomesym)
+        if (token != becomessym)
+        {
             printf("Error 13: Assignment operator expected\n");
+            error++;
+        }
         getToken();
         expression(level, 0);
         // Store
@@ -856,17 +867,26 @@ void statement(int level)
     {
         getToken();
         if (token != identsym)
-            printf("Error 14: Call must be followed by an identifier")
+        {
+            printf("Error 14: Call must be followed by an identifier\n");
+            error++;
+        }
         symPos = getSymbol(tokName, level);
         if (symPos == -1) 
+        {
             printf("Error 11: Undeclared Identifier\n");
+            error++;
+        }
 
 
         // adds CAL instruction if symbol is a procedure
         if (symbolTable[symPos].kind == 3)
             addInstruction(5, 0, level - symbolTable[symPos].level, symbolTable[symPos].addr);
         else 
+        {
             printf("Error 15: Call of a constant or variable is meaningless\n");
+            error++;
+        }
 
         getToken();
     }
@@ -880,7 +900,10 @@ void statement(int level)
             statement(level);
         }
         if (token != endsym)
+        {
             printf("Error 17: Semicolon or } expected\n");
+            error++;
+        }
         getToken();
     }
     else if (token == ifsym)
@@ -888,12 +911,15 @@ void statement(int level)
         getToken();
         condition(level);
         if (token != thensym)
+        {
             printf("Error 16: then expected\n");
+            error++;
+        }
         getToken();
         cx = iCount;
         // JPC
         addInstruction(8, 0, 0, 0);
-        statement();
+        statement(level);
         code[cx].m = iCount;
     }
     else if (token == whilesym)
@@ -905,17 +931,20 @@ void statement(int level)
         // JPC
         addInstruction(8, 0, 0, 0);
         if (token != dosym)
+        {
             printf("Error 18: do expected\n");
+            error++;
+        }
         getToken();
         statement(level);
         // JMP back to conditional
-        addInstruction(7, 0, 0, cx));
+        addInstruction(7, 0, 0, cx);
         code[cx2].m = iCount;
     }
     else if (token == writesym)
     {
         getToken();
-        expression(level, 0)
+        expression(level, 0);
         // SIO1
         addInstruction(9, 0, 0, 1);
     }
@@ -926,9 +955,15 @@ void statement(int level)
         addInstruction(10, 0, 0, 2);
         symPos = getSymbol(tokName, level);
         if (symPos == -1)
+        {
             printf("Error 11: Undeclared identifier");
+            error++;
+        }
         else if (symbolTable[symPos].kind != 2)
+        {
             printf("Error 12: Assignment to constant or procedure is not allowed");
+            error++;
+        }
         else
             addInstruction(4, 0, level - symbolTable[symPos].level, symbolTable[symPos].addr);
         getToken();
@@ -937,7 +972,7 @@ void statement(int level)
 
 void block(int level)
 {
-    char **name;
+    char *name;
     int num, incCount = 4;
 
     do 
@@ -948,21 +983,33 @@ void block(int level)
             {
                 getToken();
                 if (token != identsym)
+                {
                     printf("Error 4: const, var, procedure must be followed by indentifier\n");
+                    error++;
+                }
                 name = tokName;
                 getToken();
                 if (token != eqsym)
+                {
                      printf("Error 3: identifier must be followed by =\n");
+                     error++;
+                }
                 getToken();
                 if (token != numbersym)
-                    printf("Error 2: = must be followed by a number\n")
+                {
+                    printf("Error 2: = must be followed by a number\n");
+                    error++;
+                }
                 num = number;
                 getToken();
                 addSymbol(1, name, num, 0, 0);
             } while (token == commasym);
             
             if (token != semicolonsym)
-                printf("Error 5: Semicolon or comma missing\n")
+            {
+                printf("Error 5: Semicolon or comma missing\n");
+                error++;
+            }
             getToken();
         }
 
@@ -972,26 +1019,38 @@ void block(int level)
             {
                 getToken();
                 if (token != identsym)
+                {
                     printf("Error 4: const, var, procedure must be followed by indentifier\n");
+                    error++;
+                }
                 name = tokName;
                 getToken();
                 addSymbol(2, name, 0, level, incCount++);
-            } while (token == commasym)
+            } while (token == commasym);
         }
 
         while (token == procsym)
         {
             getToken();
             if (token != identsym)
+            {
                 printf("Error 4: const, var, procedure must be followed by indentifier\n");
+                error++;
+            }
             name = tokName;
             getToken();
             if (token != semicolonsym)
+            {
                 printf("Error 5: Semicolon or comma missing\n");
+                error++;
+            }
             getToken();
             block(level + 1);
             if (token != semicolonsym)
+            {
                 printf("Error 5: Semicolon or comma missing\n");
+                error++;
+            }
             getToken();
             addSymbol(3, name, 0, level, incCount);
         }
@@ -999,9 +1058,13 @@ void block(int level)
 
     // INC
     addInstruction(6, 0, 0, incCount);
+    getToken();
     statement(level);
     // RTN
-    addInstructions(2, 0, 0 ,0);
+    if(level != 0)
+        addInstruction(2, 0, 0 ,0);
+    else
+        addInstruction(9, 0, 0, 3);
 }
 
 void program()
@@ -1010,9 +1073,10 @@ void program()
     block(0);
 
     if (token != periodsym)
+    {
         printf("Error 9: Period expected\n");
-
-    printf("\nFinished execution. Exiting...");
+        error++;
+    }
 }
 
 int main(int argc, char **argv)
@@ -1024,6 +1088,8 @@ int main(int argc, char **argv)
     tokenCounter = 0;
     iCount = 0;
     sCount = 0;
+    lCount = 0;
+    error = 0;
     vmPrint = 0;
 
     for (i = 1; i < argc; i++)
@@ -1037,12 +1103,15 @@ int main(int argc, char **argv)
     }
 
     lexical(argv[1]);
-    if (lPrint)
+    if (error == 0 && lPrint)
         printLex();
     program();
-    if (aPrint)
+    if (error == 0 && aPrint)
         printCode();
-    vm();
-
+    if (error == 0)
+    {
+        vm();
+        printf("\nFinished execution. Exiting...");
+    }
     return 0;
 }
