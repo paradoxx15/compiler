@@ -1,0 +1,173 @@
+
+-------------------------------------------
+LIST OF LEXEMES/TOKENS:
+
+Internal Representation:
+29 2 x 17 2 y 17 2 z 18 21 2 x 20 3 5 18 2 y 20 3 3 18 2 z 20 3 0 18 25 2 y 13 3 0 26 21 31 2 y 18 2 z 20 2 z 4 2 x 18 2 y 20 2 y 5 3 1 18 22 18 31 2 z 18 22 19 
+
+Symbolic Representation:
+varsym identsym x commasym identsym y commasym identsym z semicolonsym beginsym identsym x becomessym numbersym 5 semicolonsym identsym y becomessym numbersym 3 semicolonsym identsym z becomessym numbersym 0 semicolonsym whilesym identsym y gtrsym numbersym 0 dosym beginsym writesym identsym y semicolonsym identsym z becomessym identsym z plussym identsym x semicolonsym identsym y becomessym identsym y minussym numbersym 1 semicolonsym endsym semicolonsym writesym identsym z semicolonsym endsym periodsym 
+
+
+
+Code is syntactically correct. Assembly code generated successfully.
+-------------------------------------------
+GENERATED INTERMEDIATE CODE:
+  0 inc 0 0 7
+  1 lit 0 0 5
+  2 sto 0 0 4
+  3 lit 0 0 3
+  4 sto 0 0 5
+  5 lit 0 0 0
+  6 sto 0 0 6
+  7 lod 0 0 5
+  8 lit 1 0 0
+  9 gtr 0 0 1
+ 10 jpc 0 0 22
+ 11 lod 0 0 5
+ 12 sio 0 0 1
+ 13 lod 0 0 6
+ 14 lod 1 0 4
+ 15 add 0 0 1
+ 16 sto 0 0 6
+ 17 lod 0 0 5
+ 18 lit 1 0 1
+ 19 sub 0 0 1
+ 20 sto 0 0 5
+ 21 jmp 0 0 7
+ 22 lod 0 0 6
+ 23 sio 0 0 1
+ 24 sio 0 0 3
+
+-------------------------------------------
+VIRTUAL MACHINE TRACE:
+Initial Values:
+PC  BP  SP  Stack
+0 1 0 0
+
+Stack Trace:
+    R L M PC  BP  SP  Stack
+0 jmp   0  0  7  1  1  7   0   0   0   0   0   0   0 
+RF:  0  0  0  0  0  0  0  0
+1 rtn   0  0  5  2  1  7   0   0   0   0   0   0   0 
+RF:  5  0  0  0  0  0  0  0
+2 cal   0  0  4  3  1  7   0   0   0   0   5   0   0 
+RF:  5  0  0  0  0  0  0  0
+3 rtn   0  0  3  4  1  7   0   0   0   0   5   0   0 
+RF:  3  0  0  0  0  0  0  0
+4 cal   0  0  5  5  1  7   0   0   0   0   5   3   0 
+RF:  3  0  0  0  0  0  0  0
+5 rtn   0  0  0  6  1  7   0   0   0   0   5   3   0 
+RF:  0  0  0  0  0  0  0  0
+6 cal   0  0  6  7  1  7   0   0   0   0   5   3   0 
+RF:  0  0  0  0  0  0  0  0
+7 sto   0  0  5  8  1  7   0   0   0   0   5   3   0 
+RF:  3  0  0  0  0  0  0  0
+8 rtn   1  0  0  9  1  7   0   0   0   0   5   3   0 
+RF:  3  0  0  0  0  0  0  0
+9 geq   0  0  1 10  1  7   0   0   0   0   5   3   0 
+RF:  1  0  0  0  0  0  0  0
+10 sio   0  0 22 11  1  7   0   0   0   0   5   3   0 
+RF:  1  0  0  0  0  0  0  0
+11 sto   0  0  5 12  1  7   0   0   0   0   5   3   0 
+RF:  3  0  0  0  0  0  0  0
+OUTPUT: 3
+12 neg   0  0  1 13  1  7   0   0   0   0   5   3   0 
+RF:  3  0  0  0  0  0  0  0
+13 sto   0  0  6 14  1  7   0   0   0   0   5   3   0 
+RF:  0  0  0  0  0  0  0  0
+14 sto   1  0  4 15  1  7   0   0   0   0   5   3   0 
+RF:  0  5  0  0  0  0  0  0
+15 sub   0  0  1 16  1  7   0   0   0   0   5   3   0 
+RF:  5  5  0  0  0  0  0  0
+16 cal   0  0  6 17  1  7   0   0   0   0   5   3   5 
+RF:  5  5  0  0  0  0  0  0
+17 sto   0  0  5 18  1  7   0   0   0   0   5   3   5 
+RF:  3  5  0  0  0  0  0  0
+18 rtn   1  0  1 19  1  7   0   0   0   0   5   3   5 
+RF:  3  1  0  0  0  0  0  0
+19 mul   0  0  1 20  1  7   0   0   0   0   5   3   5 
+RF:  2  1  0  0  0  0  0  0
+20 cal   0  0  5 21  1  7   0   0   0   0   5   2   5 
+RF:  2  1  0  0  0  0  0  0
+21 jpc   0  0  7  7  1  7   0   0   0   0   5   2   5 
+RF:  2  1  0  0  0  0  0  0
+22 sto   0  0  5  8  1  7   0   0   0   0   5   2   5 
+RF:  2  1  0  0  0  0  0  0
+23 rtn   1  0  0  9  1  7   0   0   0   0   5   2   5 
+RF:  2  0  0  0  0  0  0  0
+24 geq   0  0  1 10  1  7   0   0   0   0   5   2   5 
+RF:  1  0  0  0  0  0  0  0
+25 sio   0  0 22 11  1  7   0   0   0   0   5   2   5 
+RF:  1  0  0  0  0  0  0  0
+26 sto   0  0  5 12  1  7   0   0   0   0   5   2   5 
+RF:  2  0  0  0  0  0  0  0
+OUTPUT: 2
+27 neg   0  0  1 13  1  7   0   0   0   0   5   2   5 
+RF:  2  0  0  0  0  0  0  0
+28 sto   0  0  6 14  1  7   0   0   0   0   5   2   5 
+RF:  5  0  0  0  0  0  0  0
+29 sto   1  0  4 15  1  7   0   0   0   0   5   2   5 
+RF:  5  5  0  0  0  0  0  0
+30 sub   0  0  1 16  1  7   0   0   0   0   5   2   5 
+RF: 10  5  0  0  0  0  0  0
+31 cal   0  0  6 17  1  7   0   0   0   0   5   2  10 
+RF: 10  5  0  0  0  0  0  0
+32 sto   0  0  5 18  1  7   0   0   0   0   5   2  10 
+RF:  2  5  0  0  0  0  0  0
+33 rtn   1  0  1 19  1  7   0   0   0   0   5   2  10 
+RF:  2  1  0  0  0  0  0  0
+34 mul   0  0  1 20  1  7   0   0   0   0   5   2  10 
+RF:  1  1  0  0  0  0  0  0
+35 cal   0  0  5 21  1  7   0   0   0   0   5   1  10 
+RF:  1  1  0  0  0  0  0  0
+36 jpc   0  0  7  7  1  7   0   0   0   0   5   1  10 
+RF:  1  1  0  0  0  0  0  0
+37 sto   0  0  5  8  1  7   0   0   0   0   5   1  10 
+RF:  1  1  0  0  0  0  0  0
+38 rtn   1  0  0  9  1  7   0   0   0   0   5   1  10 
+RF:  1  0  0  0  0  0  0  0
+39 geq   0  0  1 10  1  7   0   0   0   0   5   1  10 
+RF:  1  0  0  0  0  0  0  0
+40 sio   0  0 22 11  1  7   0   0   0   0   5   1  10 
+RF:  1  0  0  0  0  0  0  0
+41 sto   0  0  5 12  1  7   0   0   0   0   5   1  10 
+RF:  1  0  0  0  0  0  0  0
+OUTPUT: 1
+42 neg   0  0  1 13  1  7   0   0   0   0   5   1  10 
+RF:  1  0  0  0  0  0  0  0
+43 sto   0  0  6 14  1  7   0   0   0   0   5   1  10 
+RF: 10  0  0  0  0  0  0  0
+44 sto   1  0  4 15  1  7   0   0   0   0   5   1  10 
+RF: 10  5  0  0  0  0  0  0
+45 sub   0  0  1 16  1  7   0   0   0   0   5   1  10 
+RF: 15  5  0  0  0  0  0  0
+46 cal   0  0  6 17  1  7   0   0   0   0   5   1  15 
+RF: 15  5  0  0  0  0  0  0
+47 sto   0  0  5 18  1  7   0   0   0   0   5   1  15 
+RF:  1  5  0  0  0  0  0  0
+48 rtn   1  0  1 19  1  7   0   0   0   0   5   1  15 
+RF:  1  1  0  0  0  0  0  0
+49 mul   0  0  1 20  1  7   0   0   0   0   5   1  15 
+RF:  0  1  0  0  0  0  0  0
+50 cal   0  0  5 21  1  7   0   0   0   0   5   0  15 
+RF:  0  1  0  0  0  0  0  0
+51 jpc   0  0  7  7  1  7   0   0   0   0   5   0  15 
+RF:  0  1  0  0  0  0  0  0
+52 sto   0  0  5  8  1  7   0   0   0   0   5   0  15 
+RF:  0  1  0  0  0  0  0  0
+53 rtn   1  0  0  9  1  7   0   0   0   0   5   0  15 
+RF:  0  0  0  0  0  0  0  0
+54 geq   0  0  1 10  1  7   0   0   0   0   5   0  15 
+RF:  0  0  0  0  0  0  0  0
+55 sio   0  0 22 22  1  7   0   0   0   0   5   0  15 
+RF:  0  0  0  0  0  0  0  0
+56 sto   0  0  6 23  1  7   0   0   0   0   5   0  15 
+RF: 15  0  0  0  0  0  0  0
+OUTPUT: 15
+57 neg   0  0  1 24  1  7   0   0   0   0   5   0  15 
+RF: 15  0  0  0  0  0  0  0
+58 neg   0  0  3 25  1  7   0   0   0   0   5   0  15 
+RF: 15  0  0  0  0  0  0  0
+
+Finished execution. Exiting...

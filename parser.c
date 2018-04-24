@@ -69,14 +69,15 @@ int tokenCounter;
 int token;
 int number;
 int vmPrint;
+int regCount;
 char *tokName;
 char *lexNames[] = {"nulsym", "identsym", "numbersym", "plussym", "minussym", "multsym",  
                    "slashsym", "oddsym", "eqsym", "neqsym", "lessym", "leqsym", "gtrsym", 
                    "geqsym", "lparentsym", "rparentsym", "commasym", "semicolonsym",
                    "periodsym", "becomessym", "beginsym", "endsym", "ifsym", "thensym", 
                    "whilesym", "dosym", "callsym", "constsym", "varsym", "procsym", "writesym", "readsym", "elsesym"};
-char *opTypes[] = {"", "lit", "rtn", "lod", "sto", "cal", "inc", "jmp", "jpc", "sio", "neg"
-                  "add", "sub", "mul", "div", "odd", "mod", "eql", "neq", "lss", "leq"
+char *opTypes[] = {"lit", "rtn", "lod", "sto", "cal", "inc", "jmp", "jpc", "sio", "neg",
+                  "add", "sub", "mul", "div", "odd", "mod", "eql", "neq", "lss", "leq",
                   "gtr", "geq"};
 
 void factor(int level, int reg);
@@ -601,7 +602,7 @@ void printCode()
     printf("GENERATED INTERMEDIATE CODE:\n");
     for (i = 0; i < iCount; i++)
     {
-        printf("%d %s %d %d %d\n", i, opTypes[code[i].op], code[i].r, code[i].l, code[i].m);
+        printf("%3d %s %d %d %d\n", i, opTypes[code[i].op - 1], code[i].r, code[i].l, code[i].m);
     }
 }
 
@@ -675,12 +676,12 @@ void factor(int level, int reg)
             if (symbolTable[symPos].kind == 1) 
             {
                 // LIT
-                addInstruction(1, reg, 0, symbolTable[symPos].val);
+                addInstruction(1, regCount++, 0, symbolTable[symPos].val);
             }
             else if (symbolTable[symPos].kind == 2) 
             {
                 // LOD
-                addInstruction(3, reg, level - symbolTable[symPos].level, symbolTable[symPos].addr);
+                addInstruction(3, regCount++, level - symbolTable[symPos].level, symbolTable[symPos].addr);
             }
             else 
             {
@@ -698,14 +699,15 @@ void factor(int level, int reg)
             error++;
             number = 0;
         }
-        addInstruction(1, reg, 0, number);
+        // LIT
+        addInstruction(1, regCount++, 0, number);
 
         getToken();
     }
     else if (token == lparentsym) 
     {
         getToken();
-        expression(level, reg % 2);
+        expression(level, reg + 1);
 
         if (token == rparentsym) 
         {
@@ -723,21 +725,24 @@ void factor(int level, int reg)
 void term(int level, int reg)
 {
     int lastToken;
-    factor(level, reg % 2);
+    factor(level, reg);
     while(token == multsym || token == slashsym) 
     {
-        reg++;
         lastToken = token;
         getToken();
-        factor(level, reg % 2);
+        factor(level, reg);
 
         if(lastToken == multsym) 
         {
-            addInstruction(13, 0, 0, 1);
+            addInstruction(13, regCount - 2, regCount - 2, regCount - 1);
+            if (regCount >= 1)
+                regCount--;
         }
         else 
         {
-            addInstruction(14, 0, 0, 1);
+            addInstruction(14, regCount - 2, regCount - 2, regCount - 1);
+            if (regCount >= 1)
+                regCount--;
         }
     }
 }
@@ -749,32 +754,35 @@ void expression(int level, int reg)
     {
         lastToken = token;
         getToken();
-        term(level, reg % 2);
+        term(level, reg);
 
         if (lastToken == minussym)
         {
-            addInstruction(12, 0, 0, 1);
+            addInstruction(10, regCount, regCount, 0);
         }
     }
     else
     {
-        term(level, reg % 2);
+        term(level, reg);
     }
 
     while (token == plussym || token == minussym)
     {
-        reg++;
         lastToken = token;
         getToken();
-        term(level, reg % 2);
+        term(level, reg);
 
         if (lastToken == plussym)
         {
-            addInstruction(11, 0, 0, 1);
+            addInstruction(11, regCount - 2, regCount - 2, regCount - 1);
+            if (regCount >= 1)
+                regCount--;
         }
         else
         {
-            addInstruction(12, 0, 0, 1);
+            addInstruction(12, regCount - 2, regCount - 2, regCount - 1);
+            if (regCount >= 1)
+                regCount--;
         }
     }
 }
@@ -792,7 +800,9 @@ void condition(int level)
     else
     {
         expression(level, 0);
-        if (token != eqsym && token != neqsym && token != leqsym && token != gtrsym && token!= geqsym)
+        // remove
+        //printf("Token = %d", token);
+        if (token != eqsym && token != neqsym && token != lessym && token != leqsym && token != gtrsym && token!= geqsym)
         {
             printf("Error 20: Relational operator expected\n");
             error++;
@@ -837,7 +847,7 @@ void condition(int level)
 void statement(int level)
 {
     int symPos, cx, cx2;
-
+    regCount = 0;
     if (token == identsym)
     {
         symPos = getSymbol(tokName, level);
@@ -1090,6 +1100,7 @@ int main(int argc, char **argv)
     lCount = 0;
     error = 0;
     vmPrint = 0;
+    regCount = 0;
 
     for (i = 1; i < argc; i++)
     {
@@ -1115,7 +1126,7 @@ int main(int argc, char **argv)
             printf("PROGRAM INPUT/OUTPUT:\n");
         }
         vm();
-        printf("\nFinished execution. Exiting...");
+        printf("\nFinished execution. Exiting...\n");
     }
     return 0;
 }
