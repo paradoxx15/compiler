@@ -1,0 +1,17 @@
+Directions to use the VM:
+
+1. Compile program using 'gcc parser.c'
+2. Run the program using './a.out "txt file" (parameters)'
+    Example.
+    - ./a.out p1a.txt
+    - ./a.out p1a.txt -l
+    - ./a.out p1a.txt -l -a
+    - ./a.out p1a.txt -l -a -v
+
+Parameter Explanations:
+    * NO PARAMETERS = Only prints INPUT/OUTPUT
+    * -l = Prints List of Lexemes/Tokens and INPUT/OUTPUT
+    * -a = Prints Generated Intermediate Code and INPUT/OUTPUT
+    * -v = Prints the Virtual Machine Trace
+
+These parameters can be combined in any way.
