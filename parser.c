@@ -75,8 +75,8 @@ char *lexNames[] = {"nulsym", "identsym", "numbersym", "plussym", "minussym", "m
                    "geqsym", "lparentsym", "rparentsym", "commasym", "semicolonsym",
                    "periodsym", "becomessym", "beginsym", "endsym", "ifsym", "thensym", 
                    "whilesym", "dosym", "callsym", "constsym", "varsym", "procsym", "writesym", "readsym", "elsesym"};
-char *opTypes[] = {"", "lit", "rtn", "lod", "sto", "cal", "inc", "jmp", "jpc", "sio", "neg"
-                  "add", "sub", "mul", "div", "odd", "mod", "eql", "neq", "lss", "leq"
+char *opTypes[] = {"", "lit", "rtn", "lod", "sto", "cal", "inc", "jmp", "jpc", "sio", "neg",
+                  "add", "sub", "mul", "div", "odd", "mod", "eql", "neq", "lss", "leq",
                   "gtr", "geq"};
 
 void factor(int level, int reg);
@@ -601,7 +601,7 @@ void printCode()
     printf("GENERATED INTERMEDIATE CODE:\n");
     for (i = 0; i < iCount; i++)
     {
-        printf("%d %s %d %d %d\n", i, opTypes[code[i].op], code[i].r, code[i].l, code[i].m);
+        printf("%3d %s %d %d %d\n", i, opTypes[code[i].op], code[i].r, code[i].l, code[i].m);
     }
 }
 
@@ -753,7 +753,7 @@ void expression(int level, int reg)
 
         if (lastToken == minussym)
         {
-            addInstruction(12, 0, 0, 1);
+            addInstruction(10, 0, 0, 0);
         }
     }
     else
@@ -792,7 +792,7 @@ void condition(int level)
     else
     {
         expression(level, 0);
-        if (token != eqsym && token != neqsym && token != leqsym && token != gtrsym && token!= geqsym)
+        if (token != eqsym && token != neqsym && token != leqsym && token != lessym && token != gtrsym && token!= geqsym)
         {
             printf("Error 20: Relational operator expected\n");
             error++;
@@ -1115,7 +1115,7 @@ int main(int argc, char **argv)
             printf("PROGRAM INPUT/OUTPUT:\n");
         }
         vm();
-        printf("\nFinished execution. Exiting...");
+        printf("\nFinished execution. Exiting...\n");
     }
     return 0;
 }
