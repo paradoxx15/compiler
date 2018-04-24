@@ -817,8 +817,8 @@ void condition()
     {
         getToken();
         expression();
-        // OPR ODD
-        addInstruction(2, 0, 0, 6);
+        // ODD
+        addInstruction(15, 0, 0, 0);
     }
     else
     {
@@ -834,28 +834,28 @@ void condition()
             switch(instructionType)
             {
                 case eqsym:
-                    // OPR EQL
-                    addInstruction(2,0,0,8);
+                    // EQL
+                    addInstruction(17,0,0,1);
                     break; 
                 case neqsym:
-                    // OPR NEQ
-                    addInstruction(2,0,0,9);
+                    // NEQ
+                    addInstruction(18,0,0,1);
                     break; 
                 case lessym:
-                    // OPR LSS
-                    addInstruction(2,0,0,10);
+                    // LSS
+                    addInstruction(19,0,0,1);
                     break; 
                 case leqsym:
-                    // OPR LEQ
-                    addInstruction(2,0,0,11);
+                    // LEQ
+                    addInstruction(20,0,0,1);
                     break; 
                 case gtrsym:
-                    // OPR GTR
-                    addInstruction(2,0,0,12);
+                    // GTR
+                    addInstruction(21,0,0,1);
                     break; 
                 case gegsym:
-                    // OPR GEQ
-                    addInstruction(2,0,0,13);
+                    // GEQ
+                    addInstruction(22,0,0,1);
                     break; 
             }
         }
@@ -887,7 +887,9 @@ void statement(int level)
             //error
         symPos = getSymbol(tokName, level);
         if (symPos == -1) 
-            printf("Error 11: Undeclared Identifier\n");;
+            printf("Error 11: Undeclared Identifier\n");
+
+
         // adds CAL instruction if symbol is a procedure
         if (symbolTable[symPos].kind == 3)
             addInstruction(5, 0, level - symbolTable[symPos].level, symbolTable[symPos].addr);
@@ -917,6 +919,7 @@ void statement(int level)
             // error
         getToken();
         cx = iCount;
+        // JPC
         addInstruction(8, 0, 0, 0);
         statement();
         code[cx].m = iCount;
@@ -1022,7 +1025,6 @@ void block(int level)
         }
     } while (token == constsym || token == varsym || token == procsym);
 
-   // emit(Inc, dx);
     addInstruction(6, 0, 0, incCount);
     statement(level);
 }
