@@ -67,7 +67,7 @@ int tokenCounter;
 int token;
 int number;
 int vmPrint;
-char **tokName;
+char *tokName;
 char *lexNames[] = {"nulsym", "identsym", "numbersym", "plussym", "minussym", "multsym",  
                    "slashsym", "oddsym", "eqsym", "neqsym", "lessym", "leqsym", "gtrsym", 
                    "geqsym", "lparentsym", "rparentsym", "commasym", "semicolonsym",
@@ -75,7 +75,7 @@ char *lexNames[] = {"nulsym", "identsym", "numbersym", "plussym", "minussym", "m
                    "whilesym", "dosym", "callsym", "constsym", "varsym", "procsym", "writesym", "readsym", "elsesym"};
 char *opTypes[] = {"", "lit", "rtn", "lod", "sto", "cal", "inc", "jmp", "jpc", "sio", "neg"
                   "add", "sub", "mul", "div", "odd", "mod", "eql", "neq", "lss", "leq"
-                  "gtr", "geq"}
+                  "gtr", "geq"};
 
 int base(int l, int base, int *stack)
 {
@@ -114,12 +114,13 @@ void execute(int *stack, int *registers, counters *counter)
 {
     instruction inst;
     int sioEnd = 0;
+    int i = 0;
 
     if (vmPrint)
     {
         printf("\n-------------------------------------------\n");
         printf("VIRTUAL MACHINE TRACE:\n");
-        printf("Initial Values:\n")
+        printf("Initial Values:\n");
         printf("PC\tBP\tSP\tStack\n");
         printf("0 1 0 0\n\n");
         printf("Stack Trace:\n");
@@ -279,7 +280,7 @@ void execute(int *stack, int *registers, counters *counter)
 
         if (vmPrint)
         {
-            printf("%d%-4s%3d%3d%3d%3d%3d%3d ", i, opTypes[inst.op], inst.r, inst.l, inst.m, counter->pc, counter->bp, counter->sp);
+            printf("%d%-4s%3d%3d%3d%3d%3d%3d ", i++, opTypes[inst.op], inst.r, inst.l, inst.m, counter->pc, counter->bp, counter->sp);
             printStack(counter->sp, counter->bp, stack, counter->lex);
             printf("\nRF:%3d%3d%3d%3d%3d%3d%3d%3d\n",
                 registers[0], registers[1], registers[2], registers[3], registers[4], registers[5], registers[6], registers[7]);
@@ -400,7 +401,6 @@ void lexical(char *filename)
     if (fp == NULL)
     {
         printf("Invalid File Name\n");
-        return 0;
     }
 
     c = fgetc(fp);
@@ -434,7 +434,6 @@ void lexical(char *filename)
                 else
                 {
                     printf("Error: Identifier too long.");
-                    return 0;
                 }
             }
             
@@ -463,14 +462,12 @@ void lexical(char *filename)
                 else 
                 {
                     printf("Error: Number too large");
-                    return 0;
                 }       
             }
 
             if (isalpha(c))
             {
                 printf("Error: Invalid Identifier");
-                return 0;
             }
 
             lexTable[lexTableIndex].name = lexName;
@@ -596,14 +593,12 @@ void lexical(char *filename)
                     }
                 default:
                     printf("Error: Invalid symbol.");
-                    return 0;
             }
             if (!lookedAhead)
                 c = fgetc(fp);
         }
     }
     fclose(fp);
-    return 0;
 }
 
 void printCode()
@@ -1048,4 +1043,6 @@ int main(int argc, char **argv)
     if (aPrint)
         printCode();
     vm();
+
+    return 0;
 }
